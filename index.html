@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>ACESROOM 主播桌抽水分潤試算器 v2</title>
+<style>
+  :root{
+    --paper:#ffffff; --wash:#f7f8fa; --rail:#fbfcfd;
+    --ink:#16191d; --body:#4a5159; --mute:#878f98; --hair:#e7eaee; --hair-2:#f0f2f5;
+    --brand:#bc1d2c; --brand-ink:#8f1521; --brand-wash:#fcf0f1;
+    --teal:#0d7d7d; --teal-wash:#eaf5f5;
+    --gold:#9a6b12; --gold-wash:#fbf3e2;
+    --r:11px; --r-sm:8px;
+    --num:"Segoe UI",system-ui,sans-serif;
+    --shadow:0 1px 2px rgba(20,25,29,.04), 0 8px 24px -12px rgba(20,25,29,.12);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--wash);color:var(--ink);
+    font-family:"Segoe UI","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+    line-height:1.5;-webkit-font-smoothing:antialiased;}
+  .tnum{font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1;}
+
+  /* masthead */
+  header{background:var(--paper);border-bottom:1px solid var(--hair);padding:22px 34px 18px;}
+  .brandline{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+  .mark{width:26px;height:26px;border-radius:7px;background:var(--brand);position:relative;flex:none;}
+  .mark::after{content:"A";position:absolute;inset:0;display:grid;place-items:center;
+    color:#fff;font-weight:800;font-size:15px;}
+  .brandline .t{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute);font-weight:700;}
+  .brandline .v{margin-left:auto;font-size:11px;color:var(--mute);
+    border:1px solid var(--hair);border-radius:999px;padding:3px 11px;letter-spacing:.04em;}
+  header h1{margin:0;font-size:23px;letter-spacing:-.01em;font-weight:750;}
+  header p{margin:7px 0 0;color:var(--body);font-size:13px;max-width:70ch;}
+
+  /* layout */
+  .grid{display:grid;grid-template-columns:352px 1fr;align-items:start;}
+  @media(max-width:900px){.grid{grid-template-columns:1fr;}}
+
+  /* control rail */
+  .rail{background:var(--rail);border-right:1px solid var(--hair);padding:24px 26px 40px;
+    min-height:calc(100vh - 100px);}
+  .blk{padding-bottom:20px;margin-bottom:20px;border-bottom:1px solid var(--hair-2);}
+  .blk:last-child{border:none;margin-bottom:0;}
+  .blk h2{margin:0 0 14px;font-size:11px;text-transform:uppercase;letter-spacing:.13em;
+    color:var(--mute);font-weight:750;}
+  .f{margin-bottom:15px;}
+  .f:last-child{margin-bottom:0;}
+  .f label{display:flex;justify-content:space-between;align-items:baseline;
+    font-size:13px;color:var(--body);margin-bottom:6px;font-weight:550;}
+  .f label b{color:var(--brand-ink);font-weight:700;font-size:13.5px;}
+  input[type=range]{width:100%;height:4px;-webkit-appearance:none;appearance:none;
+    background:var(--hair);border-radius:99px;outline:none;cursor:pointer;}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;
+    border-radius:50%;background:var(--brand);border:2.5px solid #fff;
+    box-shadow:0 1px 4px rgba(188,29,44,.4);transition:transform .12s;}
+  input[type=range]::-webkit-slider-thumb:active{transform:scale(1.18);}
+  input[type=number],select{width:100%;padding:8px 10px;border:1px solid var(--hair);
+    border-radius:var(--r-sm);font-size:13px;color:var(--ink);background:#fff;font-variant-numeric:tabular-nums;
+    font-family:inherit;cursor:pointer;}
+  input[type=number]:focus,select:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-wash);}
+  .seg{display:flex;gap:5px;background:var(--hair-2);padding:4px;border-radius:var(--r-sm);}
+  .seg button{flex:1;padding:7px 4px;border:none;background:transparent;border-radius:6px;
+    font-size:12.5px;cursor:pointer;color:var(--body);font-weight:600;transition:all .14s;font-family:inherit;}
+  .seg button.on{background:#fff;color:var(--brand-ink);box-shadow:0 1px 3px rgba(20,25,29,.1);}
+  .hint{font-size:11px;color:var(--mute);margin-top:5px;line-height:1.5;}
+
+  /* results */
+  .stage{padding:26px 34px 40px;}
+  .kpirow{display:grid;grid-template-columns:repeat(4,1fr);gap:13px;margin-bottom:8px;}
+  @media(max-width:640px){.kpirow{grid-template-columns:1fr 1fr;}}
+  .kpi{background:var(--paper);border:1px solid var(--hair);border-radius:var(--r);
+    padding:15px 17px;box-shadow:var(--shadow);}
+  .kpi .lab{font-size:11.5px;color:var(--mute);font-weight:600;letter-spacing:.01em;}
+  .kpi .num{font-size:27px;font-weight:760;letter-spacing:-.02em;margin-top:5px;line-height:1.1;
+    transition:color .3s;}
+  .kpi .num small{font-size:13px;font-weight:550;color:var(--mute);letter-spacing:0;}
+  .kpi .num .twd{display:block;font-size:12px;font-weight:600;color:var(--mute);margin-top:3px;letter-spacing:0;}
+  .kpi.hl{background:var(--brand-wash);border-color:#f3cdd1;}
+  .kpi.hl .num{color:var(--brand-ink);}
+  .kpi.pos .num{color:var(--teal);}
+  .kpi.neg .num{color:var(--brand);}
+
+  .pill{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:700;
+    padding:3px 10px;border-radius:999px;margin-top:7px;}
+  .pill.cap{background:var(--gold-wash);color:var(--gold);}
+  .pill.ok{background:var(--teal-wash);color:var(--teal);}
+
+  .ratiobar{display:flex;align-items:center;gap:14px;background:var(--paper);border:1px solid var(--hair);
+    border-radius:var(--r);box-shadow:var(--shadow);padding:13px 18px;margin-top:13px;}
+  .ratiobar .lab{font-size:13px;color:var(--body);font-weight:650;white-space:nowrap;}
+  .ratiobar .track{flex:1;height:8px;border-radius:99px;background:var(--hair-2);overflow:hidden;min-width:80px;}
+  .ratiobar .fill{height:100%;border-radius:99px;transition:width .3s,background .3s;}
+  .ratiobar .pct{font-size:21px;font-weight:780;font-variant-numeric:tabular-nums;min-width:54px;text-align:right;}
+  .ratiobar .tag{font-size:12px;font-weight:700;padding:3px 11px;border-radius:999px;white-space:nowrap;}
+  @media(max-width:640px){.ratiobar{flex-wrap:wrap;}.ratiobar .track{order:5;flex-basis:100%;}}
+
+  section.card{background:var(--paper);border:1px solid var(--hair);border-radius:var(--r);
+    box-shadow:var(--shadow);margin-top:18px;overflow:hidden;}
+  .card .head{padding:15px 20px 13px;border-bottom:1px solid var(--hair-2);
+    display:flex;align-items:baseline;gap:10px;}
+  .card .head h3{margin:0;font-size:15px;font-weight:700;letter-spacing:-.01em;}
+  .card .head .sub{font-size:12px;color:var(--mute);margin-left:auto;}
+  .card .body{padding:6px 20px 18px;}
+
+  table{width:100%;border-collapse:collapse;font-size:13.5px;}
+  th,td{padding:9px 8px;text-align:right;}
+  th:first-child,td:first-child{text-align:left;}
+  thead th{font-size:11.5px;color:var(--mute);font-weight:650;
+    border-bottom:1px solid var(--hair);padding-bottom:8px;}
+  tbody tr td{border-bottom:1px solid var(--hair-2);color:var(--body);}
+  tbody tr:last-child td{border-bottom:none;}
+  td.k{color:var(--ink);font-weight:550;}
+  td.money{font-variant-numeric:tabular-nums;color:var(--ink);font-weight:600;}
+  td.sub-k{color:var(--mute);padding-left:20px;font-weight:500;}
+  tr.cost td.money{color:var(--brand);}
+  tr.grand td{border-top:2px solid var(--ink);font-weight:780;color:var(--ink);padding-top:11px;}
+  tr.grand td.money{font-size:15px;}
+  tr.me td{background:var(--brand-wash);}
+  tr.me td.k{color:var(--brand-ink);font-weight:750;}
+
+  /* lifetime mini-cards */
+  .mini{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;padding:14px 20px 18px;}
+  @media(max-width:640px){.mini{grid-template-columns:1fr;}}
+  .mc{border:1px solid var(--hair-2);border-radius:var(--r-sm);padding:13px 15px;background:var(--rail);}
+  .mc .l{font-size:12px;color:var(--mute);font-weight:600;}
+  .mc .n{font-size:21px;font-weight:740;margin-top:4px;letter-spacing:-.02em;font-variant-numeric:tabular-nums;}
+  .mc .d{font-size:11px;color:var(--mute);margin-top:3px;}
+
+  .tier-row{display:flex;align-items:center;gap:10px;margin-top:10px;
+    padding:11px 14px;background:var(--brand-wash);border-radius:var(--r-sm);}
+  .tier-row .lbl{font-size:12.5px;color:var(--body);}
+  .tier-row .big{margin-left:auto;font-size:21px;font-weight:780;color:var(--brand-ink);font-variant-numeric:tabular-nums;}
+  .ladder{display:flex;gap:6px;margin-top:9px;}
+  .ladder .rung{flex:1;text-align:center;font-size:11px;color:var(--mute);
+    border:1px solid var(--hair);border-radius:6px;padding:6px 3px;background:#fff;line-height:1.4;}
+  .ladder .rung.on{border-color:var(--brand);background:var(--brand-wash);color:var(--brand-ink);font-weight:700;}
+  .ladder .rung b{display:block;font-size:13px;color:inherit;}
+
+  .verdict{margin:14px 20px 4px;padding:12px 15px;border-radius:var(--r-sm);font-size:13px;line-height:1.6;}
+  .verdict.good{background:var(--teal-wash);color:#0a5e5e;}
+  .verdict.bad{background:var(--brand-wash);color:var(--brand-ink);}
+  .verdict b{font-weight:750;}
+
+  .footnote{margin-top:18px;padding:15px 20px;background:var(--paper);border:1px solid var(--hair);
+    border-radius:var(--r);font-size:12px;color:var(--body);line-height:1.7;}
+  .footnote b{color:var(--ink);}
+  footer{padding:16px 34px 30px;color:var(--mute);font-size:11px;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brandline">
+    <span class="mark"></span>
+    <span class="t">ACESROOM · 平台 A</span>
+    <span class="v">營運模型 v2</span>
+  </div>
+  <h1>主播桌抽水分潤試算器</h1>
+  <p>全頁以 <b>AR幣</b> 計價；AR 比台幣 = <b>3 比 1</b>（1 台幣 = 3 AR）。主播薪資以台幣輸入、自動 ×3 換算；損益同時顯示 AR 與台幣。所有數字為模型推估，尚未接後台數據。</p>
+</header>
+
+<div class="grid">
+  <!-- ============ CONTROL RAIL ============ -->
+  <aside class="rail">
+    <div class="blk">
+      <h2>牌局參數</h2>
+      <div class="f">
+        <label>盲注級距（AR）</label>
+        <select id="blindSel">
+          <option value="6">3 / 6（不派陪玩）</option>
+          <option value="30">15 / 30（不派陪玩）</option>
+          <option value="50">25 / 50（不派陪玩）</option>
+          <option value="100" selected>50 / 100</option>
+          <option value="200">100 / 200</option>
+          <option value="300">150 / 300</option>
+          <option value="400">200 / 400</option>
+          <option value="600">300 / 600</option>
+        </select>
+        <div class="hint">全 AR幣盲注。<b>3/6、15/30、25/50 不派陪玩主播</b>（無主播成本）；50/100 以上才派。</div>
+      </div>
+      <div class="f">
+        <label>買入深度（BB）<b id="buyinB">200</b></label>
+        <input type="range" id="buyin" min="20" max="500" value="200" step="10">
+        <div class="hint" id="buyinHint"></div>
+      </div>
+      <div class="f">
+        <label>平均底池（幾個大盲）<b id="potMulB">100</b></label>
+        <input type="range" id="potMul" min="20" max="400" value="100" step="5">
+        <div class="hint">這是「平均每把底池」（抽水＝底池 × 比例），不等於買入額。<br>以大盲倍數計，幣別無關；底池夠大時會觸發該盲注的封頂。</div>
+      </div>
+      <div class="f">
+        <label>每小時把數<b id="hphB">80</b></label>
+        <input type="range" id="hph" min="40" max="100" value="80" step="5">
+      </div>
+    </div>
+
+    <div class="blk">
+      <h2>營運規模</h2>
+      <div class="f">
+        <label>同時開桌數<b id="tcB">10</b></label>
+        <input type="range" id="tc" min="1" max="100" value="10" step="1">
+      </div>
+      <div class="f">
+        <label>營運時數（小時）<b id="hrsB">4</b></label>
+        <input type="range" id="hrs" min="1" max="12" value="4" step="1">
+        <div class="hint">總計＝每桌每小時 × 桌數 × 時數。</div>
+      </div>
+    </div>
+
+    <div class="blk">
+      <h2>抽水規則</h2>
+      <div class="f">
+        <label>抽水比例（%）<b id="rakeB">5</b></label>
+        <input type="range" id="rake" min="1" max="10" value="5" step="0.5">
+      </div>
+      <div class="f">
+        <label>每把封頂（AR）</label>
+        <input type="number" id="cap" value="2000" min="0" step="10">
+        <div class="hint">切換盲注自動帶入封頂（AR，預設＝20×大盲，例：50/100→2000、300/600→12000）。可手動覆寫；0=不封頂。</div>
+      </div>
+      <div class="f">
+        <label>Jackpot 提撥（佔總抽水 %）<b id="jpB">10</b></label>
+        <input type="range" id="jp" min="0" max="30" value="10" step="1">
+        <div class="hint">從總抽水先撥入 jackpot 池，供後續會員活動使用；平台與代理就「剩餘部分」分潤。</div>
+      </div>
+    </div>
+
+    <div class="blk">
+      <h2>分潤模式</h2>
+      <div class="f">
+        <div class="seg" id="modeSeg">
+          <button data-mode="agent" class="on">代理制</button>
+          <button data-mode="direct">平台直營</button>
+        </div>
+      </div>
+      <div class="f" id="shareModeRow">
+        <label>代理分潤方式</label>
+        <div class="seg" id="shareSeg">
+          <button data-sm="fixed" class="on">固定</button>
+          <button data-sm="tier">階梯</button>
+        </div>
+      </div>
+      <div class="f" id="fixedRow">
+        <label>代理分潤（%）<b id="agentShareB">80</b></label>
+        <input type="range" id="agentShare" min="0" max="80" value="80" step="5">
+        <div class="hint">代理分得這塊，其餘歸平台；主播由誰付見下方切換。</div>
+      </div>
+      <div class="f" id="tierRow" style="display:none">
+        <label>該代理月有效抽水量（AR）<b id="monthlyB">3,000,000</b></label>
+        <input type="range" id="monthly" min="0" max="20000000" value="3000000" step="100000">
+        <div class="hint">依量級自動套用分潤級距：30/40/50/60/70%（門檻可由實際政策調整）。</div>
+      </div>
+      <div class="f" id="payerRow">
+        <label>主播薪資由誰付</label>
+        <div class="seg" id="payerSeg">
+          <button data-payer="agent">代理支付</button>
+          <button data-payer="platform" class="on">平台承擔</button>
+        </div>
+        <div class="hint">切換主播薪資的承擔方，平台淨利與代理淨利會隨之變化。</div>
+      </div>
+    </div>
+
+    <div class="blk">
+      <h2>主播成本（每小時）</h2>
+      <div class="f">
+        <label>主播時薪（台幣）<b id="streamerB">600</b></label>
+        <input type="range" id="streamer" min="0" max="3000" value="600" step="100">
+        <div class="hint" id="streamerHint">一桌一主播、不攤提；台幣 ×3 換算成 AR 計入成本。</div>
+      </div>
+    </div>
+
+    <div class="blk">
+      <h2>玩家生命週期</h2>
+      <div class="f">
+        <label>桌上真實玩家數<b id="rpB">5</b></label>
+        <input type="range" id="rp" min="1" max="8" value="5" step="1">
+      </div>
+      <div class="f">
+        <label>每位每小時淨輸（BB）<b id="lossB">12</b></label>
+        <input type="range" id="loss" min="2" max="40" value="12" step="1">
+        <div class="hint">玩家平均一小時輸掉幾個大盲，決定多久爆倉。</div>
+      </div>
+      <div class="f">
+        <label>平均買入次數（含再買入）<b id="rebuyB">1</b></label>
+        <input type="range" id="rebuy" min="1" max="5" value="1" step="1">
+      </div>
+      <div class="f">
+        <div class="hint" id="stayDerived"></div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ============ STAGE ============ -->
+  <main class="stage">
+    <div class="kpirow">
+      <div class="kpi"><div class="lab">每把抽水</div><div class="num tnum" id="kHand">-</div>
+        <span class="pill" id="kCap"></span></div>
+      <div class="kpi hl"><div class="lab">每小時抽水（整桌）</div><div class="num tnum" id="kHour">-</div></div>
+      <div class="kpi pos"><div class="lab">平台淨利 / 時</div><div class="num tnum" id="kPlatform">-</div></div>
+      <div class="kpi" id="kAgentCard"><div class="lab" id="kAgentLab">代理淨利 / 時</div><div class="num tnum" id="kAgent">-</div></div>
+    </div>
+
+    <div class="ratiobar" id="ratioBar"></div>
+
+    <section class="card">
+      <div class="head"><h3>每小時三方分潤與損益</h3><span class="sub" id="pnlSub"></span></div>
+      <div class="body"><table id="pnl"><tbody></tbody></table></div>
+      <div class="verdict" id="verdict"></div>
+    </section>
+
+    <section class="card">
+      <div class="head"><h3>營運規模總計</h3><span class="sub" id="scaleSub"></span></div>
+      <div class="mini" id="scaleMini"></div>
+    </section>
+
+    <section class="card" id="tierCard" style="display:none">
+      <div class="head"><h3>代理階梯分潤</h3><span class="sub">依月有效抽水量自動落級</span></div>
+      <div style="padding:6px 20px 18px">
+        <div class="tier-row">
+          <span class="lbl">目前月有效抽水量 <b class="tnum" id="tierVol">-</b>，套用分潤</span>
+          <span class="big" id="tierPct">-</span>
+        </div>
+        <div class="ladder" id="ladder"></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="head"><h3>玩家生命週期價值</h3><span class="sub">抽水長期化的衡量</span></div>
+      <div class="mini" id="mini"></div>
+    </section>
+
+    <section class="card">
+      <div class="head"><h3>主播薪資安全區間</h3><span class="sub">依付款方口袋計算（一桌一主播）</span></div>
+      <div class="body"><table id="streamerTbl"><tbody></tbody></table></div>
+    </section>
+
+    <section class="card">
+      <div class="head"><h3>各盲注快速對照（AR）</h3><span class="sub">沿用目前底池 / 把數 / 分潤設定</span></div>
+      <div class="body">
+        <table id="cmp">
+          <thead><tr><th>盲注</th><th>每小時抽水</th><th>平台淨利</th><th>代理 / 直營池</th><th>主播可付上限</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <div class="footnote">
+      <b>幣別：</b>遊戲內金額（盲注 / 底池 / 抽水 / jackpot / 代理量）皆為 <b>AR幣</b>；AR : 台幣 = 3 : 1。主播薪資以台幣輸入、×3 換成 AR 計入；損益同時顯示 AR 與台幣。
+      <b>讀數前提：</b>所有數字建立在「平均底池等於設定的大盲倍數」與「桌子是活的，有真實玩家在淨輸」兩個假設上。
+      平台與代理先就 <b>全額抽水</b> 正常分潤；<b>jackpot 提撥</b>（預設 10%，會員活動預算）由 <b>平台</b> 從其分得中承擔，不稀釋代理。
+      主播薪資可選由 <b>代理支付</b> 或 <b>平台承擔</b>；一桌一主播，整份薪資由單桌承擔、不攤提。
+      階梯分潤級距 30/40/50/60/70%（門檻 100/250/500/800 萬）為示意值，須由實際代理政策設定。
+      取得後台真實「平均每把抽水」與「玩家平均停留時數」後即可校準為 v3。
+    </div>
+  </main>
+</div>
+
+<footer>ACESROOM 主播桌抽水分潤模型 v2 · 純試算工具，未接後台數據 · AR幣計價，AR:台幣=3:1 · 主播薪資台幣輸入自動換算</footer>
+
+<script>
+const $=id=>document.getElementById(id);
+const fmt=n=>Math.round(n).toLocaleString('en-US');
+const fmt1=n=>(Math.round(n*10)/10).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:1});
+
+const RATE=3;                  // 1 台幣 = 3 AR幣
+const twd=ar=>fmt(ar/RATE);    // AR -> 台幣 顯示
+const S={bb:100,buyin:200,potMul:100,hph:80,tc:10,hrs:4,rake:5,cap:2000,jp:10,mode:'agent',shareMode:'fixed',
+  agentShare:80,monthly:3000000,streamerPayer:'platform',streamer:600,rp:5,loss:12,rebuy:1};
+
+// tier thresholds (示意, 月有效抽水量 -> 分潤%)
+const TIERS=[
+  {max:1000000, pct:30, lab:'<100萬'},
+  {max:2500000, pct:40, lab:'100-250萬'},
+  {max:5000000, pct:50, lab:'250-500萬'},
+  {max:8000000, pct:60, lab:'500-800萬'},
+  {max:Infinity, pct:70, lab:'≥800萬'}
+];
+function tierFor(v){return TIERS.find(t=>v<t.max);}
+
+const CAPS={6:120,30:600,50:1000,100:2000,200:4000,300:6000,400:8000,600:12000};  // 盲注 BB(AR) -> 封頂(AR)＝20×大盲
+const NO_STREAMER=new Set([6,30,50]);   // 此級距不派陪玩主播
+const BLINDS=[6,30,50,100,200,300,400,600];
+const LBL={6:'3/6',30:'15/30',50:'25/50',100:'50/100',200:'100/200',300:'150/300',400:'200/400',600:'300/600'};
+function rakeHour(bb,cap){
+  if(cap===undefined) cap=S.cap;
+  const pot=S.potMul*bb;
+  let ph=pot*(S.rake/100);
+  const capped=cap>0 && ph>cap;
+  if(capped) ph=cap;
+  return {pot,perHand:ph,perHour:ph*S.hph,capped};
+}
+
+function sharePct(){ // agent share fraction
+  if(S.mode==='direct') return 1;            // platform is the operator
+  if(S.shareMode==='tier') return tierFor(S.monthly).pct/100;
+  return S.agentShare/100;
+}
+
+function render(){
+  // labels
+  $('buyinB').textContent=S.buyin; $('potMulB').textContent=S.potMul; $('hphB').textContent=S.hph;
+  const buyinAR=S.buyin*S.bb;
+  $('buyinHint').innerHTML=`買入 = ${S.buyin} BB × ${S.bb} = <b>${fmt(buyinAR)} AR</b> ≈ NT$ ${twd(buyinAR)}`;
+  $('rakeB').textContent=S.rake; $('jpB').textContent=S.jp; $('agentShareB').textContent=S.agentShare;
+  $('monthlyB').textContent=fmt(S.monthly); $('streamerB').textContent=fmt(S.streamer);
+  $('rpB').textContent=S.rp; $('lossB').textContent=S.loss; $('rebuyB').textContent=S.rebuy;
+  $('tcB').textContent=S.tc; $('hrsB').textContent=S.hrs;
+  $('streamerHint').innerHTML=NO_STREAMER.has(S.bb)
+    ? `本級距 <b>不派陪玩</b>，主播成本不計入（薪資設定僅供其他級距）。`
+    : `= <b>${fmt(S.streamer*RATE)} AR</b>/時（台幣 ×3）；一桌一主播、不攤提。`;
+
+  const isAgent=S.mode==='agent';
+  $('shareModeRow').style.display=isAgent?'block':'none';
+  $('fixedRow').style.display=(isAgent&&S.shareMode==='fixed')?'block':'none';
+  $('tierRow').style.display=(isAgent&&S.shareMode==='tier')?'block':'none';
+  $('tierCard').style.display=(isAgent&&S.shareMode==='tier')?'block':'none';
+  $('payerRow').style.display=isAgent?'block':'none';
+  $('kAgentCard').style.display=isAgent?'block':'none';
+
+  const R=rakeHour(S.bb);
+  const jp=S.jp/100;
+  const jackpot=R.perHour*jp;                     // jackpot 提撥（總抽水 jp%），由平台承擔
+  const agentPct=sharePct();
+  const platformPct=isAgent?(1-agentPct):1;
+  const pool=R.perHour*agentPct;                  // 代理池：就全額抽水分潤，不受 jackpot 影響
+  const platformCut=R.perHour*platformPct;         // 平台分得（全額抽水）
+  const hasStreamer=!NO_STREAMER.has(S.bb);        // 此級距是否派陪玩
+  const streamerPerTable=hasStreamer?S.streamer*RATE:0;   // 不派陪玩則無主播成本
+  const streamerOnAgent=isAgent && hasStreamer && S.streamerPayer==='agent';  // 主播是否由代理支付
+
+  // KPI
+  $('kHand').innerHTML=`${fmt(R.perHand)} <small>AR/把</small><span class="twd">≈ NT$ ${twd(R.perHand)}</span>`;
+  $('kHour').innerHTML=`${fmt(R.perHour)} <small>AR/時</small><span class="twd">≈ NT$ ${twd(R.perHour)}/時</span>`;
+  $('kCap').className='pill '+(R.capped?'cap':'ok');
+  $('kCap').textContent=R.capped?('已觸頂 '+fmt(S.cap)+' AR'):'未觸頂';
+
+  let platformNet, agentNet;
+  if(isAgent){
+    agentNet=pool-(streamerOnAgent?streamerPerTable:0);
+    platformNet=platformCut-jackpot-(streamerOnAgent?0:streamerPerTable);
+  } else { platformNet=R.perHour-jackpot-streamerPerTable; agentNet=null; }
+
+  $('kPlatform').innerHTML=`${fmt(platformNet)} <small>AR</small><span class="twd">≈ NT$ ${twd(platformNet)}/時</span>`;
+  $('kPlatform').parentElement.className='kpi '+(platformNet>=0?'pos':'neg');
+  if(isAgent){
+    $('kAgent').innerHTML=`${fmt(agentNet)} <small>AR</small><span class="twd">≈ NT$ ${twd(agentNet)}/時</span>`;
+    $('kAgentCard').className='kpi '+(agentNet>=0?'pos':'neg');
+  }
+
+  // streamer cost as % of the payer's gross take
+  if(!hasStreamer){
+    $('ratioBar').innerHTML=`
+      <span class="lab">本級距不派陪玩</span>
+      <div class="track"></div>
+      <span class="tag" style="background:var(--teal-wash);color:var(--teal)">無主播成本</span>`;
+  }else{
+    let payerName, payerGross;
+    if(isAgent){
+      if(streamerOnAgent){ payerName='代理'; payerGross=pool; }
+      else { payerName='平台'; payerGross=platformCut; }
+    } else { payerName='平台'; payerGross=R.perHour; }
+    const sr=payerGross>0?streamerPerTable/payerGross:0;
+    let srC,srT,srBg,srFg;
+    if(sr<0.30){srC='var(--teal)';srT='健康';srBg='var(--teal-wash)';srFg='var(--teal)';}
+    else if(sr<0.60){srC='var(--gold)';srT='偏高';srBg='var(--gold-wash)';srFg='var(--gold)';}
+    else {srC='var(--brand)';srT='過高';srBg='var(--brand-wash)';srFg='var(--brand-ink)';}
+    $('ratioBar').innerHTML=`
+      <span class="lab">主播薪資占${payerName}毛收</span>
+      <div class="track"><div class="fill" style="width:${Math.min(100,sr*100).toFixed(0)}%;background:${srC}"></div></div>
+      <span class="pct" style="color:${srC}">${(sr*100).toFixed(0)}%</span>
+      <span class="tag" style="background:${srBg};color:${srFg}">${srT}</span>`;
+  }
+
+  // P&L table
+  let rows='';
+  rows+=`<tr><td class="k">總抽水</td><td class="money">${fmt(R.perHour)}</td></tr>`;
+  const streamerRow=`<tr class="cost"><td class="sub-k">主播成本（NT$${fmt(S.streamer)} ×3）</td><td class="money">-${fmt(streamerPerTable)}</td></tr>`;
+  const jackpotRow=`<tr><td class="sub-k">Jackpot 提撥（${S.jp}%，平台承擔）</td><td class="money" style="color:var(--gold)">-${fmt(jackpot)}</td></tr>`;
+  if(isAgent){
+    rows+=`<tr><td class="k">平台分得（${Math.round(platformPct*100)}%）</td><td class="money">${fmt(platformCut)}</td></tr>`;
+    rows+=jackpotRow;
+    if(hasStreamer && !streamerOnAgent) rows+=streamerRow;
+    rows+=`<tr><td class="k">代理池（${Math.round(agentPct*100)}%）</td><td class="money">${fmt(pool)}</td></tr>`;
+    if(hasStreamer && streamerOnAgent) rows+=streamerRow;
+    rows+=`<tr class="grand"><td class="k">代理淨利</td><td class="money">${fmt(agentNet)}</td></tr>`;
+    rows+=`<tr class="grand"><td class="k">平台淨利</td><td class="money">${fmt(platformNet)}</td></tr>`;
+    $('pnlSub').textContent=!hasStreamer?'此級距不派陪玩':(streamerOnAgent?'Jackpot 由平台承擔、主播由代理支付':'Jackpot 與主播均由平台承擔');
+  }else{
+    rows+=jackpotRow;
+    if(hasStreamer) rows+=streamerRow;
+    rows+=`<tr class="grand"><td class="k">平台淨利</td><td class="money">${fmt(platformNet)}</td></tr>`;
+    $('pnlSub').textContent=hasStreamer?'平台自負 jackpot 與營運':'此級距不派陪玩';
+  }
+  $('pnl').querySelector('tbody').innerHTML=rows;
+
+  // verdict
+  if(isAgent){
+    if(agentNet<0){
+      $('verdict').className='verdict bad';
+      $('verdict').innerHTML=`⚠ <b>代理在此設定為虧損</b>（${fmt(agentNet)} / 時）。可調高盲注或代理分潤，或把主播改由平台承擔。`;
+    }else if(platformNet<0){
+      $('verdict').className='verdict bad';
+      $('verdict').innerHTML=`⚠ <b>平台在此設定為虧損</b>（${fmt(platformNet)} / 時）。主播由平台承擔時，平台分得需大於主播薪資，否則應降低代理分潤或降低主播薪。`;
+    }else{
+      $('verdict').className='verdict good';
+      $('verdict').innerHTML=`✓ <b>雙方皆有利潤</b>：代理 ${fmt(agentNet)} / 時、平台 ${fmt(platformNet)} / 時。主播由${streamerOnAgent?'代理':'平台'}支付。`;
+    }
+  }else{
+    if(platformNet<0){
+      $('verdict').className='verdict bad';
+      $('verdict').innerHTML=`⚠ <b>平台直營在此設定為虧損</b>（${fmt(platformNet)} / 時）。`;
+    }else{
+      $('verdict').className='verdict good';
+      $('verdict').innerHTML=`✓ <b>平台直營有利潤</b>（${fmt(platformNet)} / 時），但需自負招募、發薪與營運風險。`;
+    }
+  }
+
+  // operating scale totals
+  const scale=S.tc*S.hrs;
+  const totRake=R.perHour*scale, totPlatform=platformNet*scale;
+  const totStreamer=streamerPerTable*scale, totJackpot=jackpot*scale;
+  $('scaleSub').textContent=`${S.tc} 桌 × ${S.hrs} 小時 = ${fmt(scale)} 桌時`;
+  let sc=`
+    <div class="mc"><div class="l">總抽水（AR）</div><div class="n tnum">${fmt(totRake)}</div><div class="d">≈ NT$ ${twd(totRake)} · ${S.tc}桌×${S.hrs}時</div></div>
+    <div class="mc"><div class="l">Jackpot 池累積（AR）</div><div class="n tnum" style="color:var(--gold)">${fmt(totJackpot)}</div><div class="d">≈ NT$ ${twd(totJackpot)} · 供會員活動</div></div>
+    <div class="mc"><div class="l">平台總淨利（AR）</div><div class="n tnum">${fmt(totPlatform)}</div><div class="d">≈ NT$ ${twd(totPlatform)}</div></div>`;
+  if(isAgent) sc+=`<div class="mc"><div class="l">代理總淨利（AR）</div><div class="n tnum">${fmt(agentNet*scale)}</div><div class="d">≈ NT$ ${twd(agentNet*scale)}</div></div>`;
+  sc+=`<div class="mc"><div class="l">主播總成本（AR）</div><div class="n tnum">${fmt(totStreamer)}</div><div class="d">≈ NT$ ${twd(totStreamer)} · 由${streamerOnAgent?'代理':'平台'}支付</div></div>`;
+  $('scaleMini').innerHTML=sc;
+
+  // tier ladder
+  if(isAgent&&S.shareMode==='tier'){
+    const t=tierFor(S.monthly);
+    $('tierVol').textContent=fmt(S.monthly);
+    $('tierPct').textContent=t.pct+'%';
+    $('ladder').innerHTML=TIERS.map(x=>
+      `<div class="rung ${x===t?'on':''}"><b>${x.pct}%</b>${x.lab}</div>`).join('');
+  }
+
+  // player lifetime — stay hours derived from buy-in depth ÷ loss rate × re-buys
+  const stayHours=S.loss>0?(S.buyin*S.rebuy)/S.loss:0;
+  $('stayDerived').innerHTML=`推估停留 = 買入 ${S.buyin}BB × ${S.rebuy} 次 ÷ ${S.loss} BB/時 = <b>${fmt1(stayHours)} 小時</b>`;
+  const playerRakeHr=R.perHour/S.rp;
+  const ltRake=playerRakeHr*stayHours;
+  const ltPlatform=ltRake*(platformPct-jp);
+  const playersToCover=streamerPerTable/playerRakeHr;
+  $('mini').innerHTML=`
+    <div class="mc"><div class="l">推估停留時數</div><div class="n tnum">${fmt1(stayHours)} <small style="font-size:13px;color:var(--mute)">時</small></div><div class="d">買入 ${S.buyin}BB × ${S.rebuy} ÷ ${S.loss} BB/時</div></div>
+    <div class="mc"><div class="l">每位玩家終身貢獻抽水</div><div class="n tnum">${fmt(ltRake)}</div><div class="d">停留 ${fmt1(stayHours)} 小時 × 每時 ${fmt(playerRakeHr)} AR</div></div>
+    <div class="mc"><div class="l">每位玩家終身 → 平台淨利</div><div class="n tnum">${fmt(ltPlatform)}</div><div class="d">平台分潤 ${Math.round(platformPct*100)}% 減 jackpot ${S.jp}%</div></div>
+    <div class="mc"><div class="l">回收主播本桌成本所需玩家數</div><div class="n tnum">${hasStreamer?fmt1(playersToCover):'—'}</div><div class="d">${hasStreamer?('目前桌上 '+S.rp+' 位'+(playersToCover<=S.rp?'，已覆蓋':'，尚不足')):'本級距不派陪玩'}</div></div>`;
+
+  // streamer safe range (budget comes from whoever pays the streamer)
+  if(!hasStreamer){
+    $('streamerTbl').querySelector('tbody').innerHTML=
+      '<tr><td class="k" style="color:var(--mute)">本級距不派陪玩，無主播薪資需求。</td></tr>';
+  }else{
+    const payerBudget=isAgent?(streamerOnAgent?pool:(platformCut-jackpot)):(R.perHour-jackpot);
+    const affordTotal=Math.max(0,payerBudget);  // 一桌一主播：付款方扣 jackpot 後可給主播
+    const st=[['損益兩平上限','100%',affordTotal],
+              ['留 30% 利潤','70%',affordTotal*0.7],
+              ['留 50% 利潤（建議）','50%',affordTotal*0.5]];
+    $('streamerTbl').querySelector('tbody').innerHTML=
+      '<tr style="font-size:12px"><td class="sub-k" style="padding-left:0;color:var(--mute)">情境</td>'+
+      '<td style="color:var(--mute)">給主播比例</td><td style="color:var(--mute)">可付主播時薪（台幣）</td></tr>'+
+      st.map(r=>`<tr><td class="k">${r[0]}</td><td>${r[1]}</td><td class="money">NT$ ${fmt(r[2]/RATE)}</td></tr>`).join('');
+  }
+
+  // comparison
+  $('cmp').querySelector('tbody').innerHTML=BLINDS.map(bb=>{
+    const r=rakeHour(bb,CAPS[bb]).perHour;
+    const jr=r*jp;
+    const sc2=NO_STREAMER.has(bb)?0:S.streamer*RATE;
+    const pf=isAgent?(r*platformPct-jr-(streamerOnAgent?0:sc2)):(r-jr-sc2);
+    const pl=r*(isAgent?agentPct:1);
+    const smax=NO_STREAMER.has(bb)?null:Math.max(0,(isAgent?(streamerOnAgent?r*agentPct:r*platformPct-jr):(r-jr)));
+    const me=(bb===Number(S.bb))?' class="me"':'';
+    return `<tr${me}><td class="k">${LBL[bb]}${NO_STREAMER.has(bb)?' <span style="color:var(--mute);font-size:11px">·無陪玩</span>':''}</td><td class="money">${fmt(r)}</td><td class="money">${fmt(pf)}</td><td class="money">${fmt(pl)}</td><td class="money">${smax===null?'—':fmt(smax)}</td></tr>`;
+  }).join('');
+}
+
+// bindings
+['buyin','potMul','hph','rake','cap','jp','agentShare','monthly','streamer','rp','loss','rebuy','tc','hrs']
+.forEach(id=>$(id).addEventListener('input',e=>{
+  S[id]=Number(e.target.value);
+  render();
+}));
+$('blindSel').addEventListener('change',e=>{
+  S.bb=Number(e.target.value);
+  if(CAPS[S.bb]!==undefined){S.cap=CAPS[S.bb];$('cap').value=S.cap;}
+  render();});
+$('modeSeg').addEventListener('click',e=>{const m=e.target.dataset.mode;if(!m)return;
+  S.mode=m;[...$('modeSeg').children].forEach(b=>b.classList.toggle('on',b===e.target));render();});
+$('shareSeg').addEventListener('click',e=>{const sm=e.target.dataset.sm;if(!sm)return;
+  S.shareMode=sm;[...$('shareSeg').children].forEach(b=>b.classList.toggle('on',b===e.target));render();});
+$('payerSeg').addEventListener('click',e=>{const p=e.target.dataset.payer;if(!p)return;
+  S.streamerPayer=p;[...$('payerSeg').children].forEach(b=>b.classList.toggle('on',b===e.target));render();});
+render();
+</script>
+</body>
+</html>
