@@ -206,7 +206,11 @@
       <div class="f">
         <label>營運時數（小時）<b id="hrsB">4</b></label>
         <input type="range" id="hrs" min="1" max="12" value="4" step="1">
-        <div class="hint">總計＝每桌每小時 × 桌數 × 時數。</div>
+      </div>
+      <div class="f">
+        <label>營運天數（天）<b id="daysB">30</b></label>
+        <input type="range" id="days" min="1" max="30" value="30" step="1">
+        <div class="hint">總計＝每桌每小時 × 桌數 × 時數 × 天數。預設 30 天＝看代理整月獲利。</div>
       </div>
     </div>
 
@@ -367,7 +371,7 @@ const fmt1=n=>(Math.round(n*10)/10).toLocaleString('en-US',{minimumFractionDigit
 
 const RATE=3;                  // 1 台幣 = 3 AR幣
 const twd=ar=>fmt(ar/RATE);    // AR -> 台幣 顯示
-const S={bb:100,buyin:200,potMul:100,hph:80,tc:10,hrs:4,rake:5,cap:2000,jp:10,mode:'agent',shareMode:'tier',
+const S={bb:100,buyin:200,potMul:100,hph:80,tc:10,hrs:4,days:30,rake:5,cap:2000,jp:10,mode:'agent',shareMode:'tier',
   agentShare:80,monthly:3000000,streamerPayer:'platform',streamer:600,rp:5,loss:12,rebuy:1};
 
 // tier thresholds (示意, 月有效抽水量 -> 分潤%)
@@ -407,7 +411,7 @@ function render(){
   $('rakeB').textContent=S.rake; $('jpB').textContent=S.jp; $('agentShareB').textContent=S.agentShare;
   $('monthlyB').textContent=fmt(S.monthly); $('streamerB').textContent=fmt(S.streamer);
   $('rpB').textContent=S.rp; $('lossB').textContent=S.loss; $('rebuyB').textContent=S.rebuy;
-  $('tcB').textContent=S.tc; $('hrsB').textContent=S.hrs;
+  $('tcB').textContent=S.tc; $('hrsB').textContent=S.hrs; $('daysB').textContent=S.days;
   $('streamerHint').innerHTML=NO_STREAMER.has(S.bb)
     ? `本級距 <b>不派陪玩</b>，主播成本不計入（薪資設定僅供其他級距）。`
     : `= <b>${fmt(S.streamer*RATE)} AR</b>/時（台幣 ×3）；一桌一主播、不攤提。`;
@@ -519,12 +523,12 @@ function render(){
   }
 
   // operating scale totals
-  const scale=S.tc*S.hrs;
+  const scale=S.tc*S.hrs*S.days;
   const totRake=R.perHour*scale, totPlatform=platformNet*scale;
   const totStreamer=streamerPerTable*scale, totJackpot=jackpot*scale;
-  $('scaleSub').textContent=`${S.tc} 桌 × ${S.hrs} 小時 = ${fmt(scale)} 桌時`;
+  $('scaleSub').textContent=`${S.tc} 桌 × ${S.hrs} 小時 × ${S.days} 天 = ${fmt(scale)} 桌時`;
   let sc=`
-    <div class="mc"><div class="l">總抽水（AR）</div><div class="n tnum">${fmt(totRake)}</div><div class="d">≈ NT$ ${twd(totRake)} · ${S.tc}桌×${S.hrs}時</div></div>
+    <div class="mc"><div class="l">總抽水（AR）</div><div class="n tnum">${fmt(totRake)}</div><div class="d">≈ NT$ ${twd(totRake)} · ${S.tc}桌×${S.hrs}時×${S.days}天</div></div>
     <div class="mc"><div class="l">Jackpot 池累積（AR）</div><div class="n tnum" style="color:var(--gold)">${fmt(totJackpot)}</div><div class="d">≈ NT$ ${twd(totJackpot)} · 供會員活動</div></div>
     <div class="mc"><div class="l">平台總淨利（AR）</div><div class="n tnum">${fmt(totPlatform)}</div><div class="d">≈ NT$ ${twd(totPlatform)}</div></div>`;
   if(isAgent) sc+=`<div class="mc"><div class="l">代理總淨利（AR）</div><div class="n tnum">${fmt(agentNet*scale)}</div><div class="d">≈ NT$ ${twd(agentNet*scale)}</div></div>`;
@@ -583,7 +587,7 @@ function render(){
 }
 
 // bindings
-['buyin','potMul','hph','rake','cap','jp','agentShare','monthly','streamer','rp','loss','rebuy','tc','hrs']
+['buyin','potMul','hph','rake','cap','jp','agentShare','monthly','streamer','rp','loss','rebuy','tc','hrs','days']
 .forEach(id=>$(id).addEventListener('input',e=>{
   S[id]=Number(e.target.value);
   render();
