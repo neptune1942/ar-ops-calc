@@ -239,8 +239,8 @@
       <div class="f" id="shareModeRow">
         <label>代理分潤方式</label>
         <div class="seg" id="shareSeg">
-          <button data-sm="fixed" class="on">固定</button>
-          <button data-sm="tier">階梯</button>
+          <button data-sm="fixed">固定</button>
+          <button data-sm="tier" class="on">階梯</button>
         </div>
       </div>
       <div class="f" id="fixedRow">
@@ -251,7 +251,7 @@
       <div class="f" id="tierRow" style="display:none">
         <label>該代理月有效抽水量（AR）<b id="monthlyB">3,000,000</b></label>
         <input type="range" id="monthly" min="0" max="20000000" value="3000000" step="100000">
-        <div class="hint">依量級自動套用分潤級距：30/40/50/60/70%（門檻可由實際政策調整）。</div>
+        <div class="hint">依量級自動套用分潤級距：10/15/20/25/30%（門檻可由實際政策調整）。</div>
       </div>
       <div class="f" id="payerRow">
         <label>主播薪資由誰付</label>
@@ -352,7 +352,7 @@
       <b>讀數前提：</b>所有數字建立在「平均底池等於設定的大盲倍數」與「桌子是活的，有真實玩家在淨輸」兩個假設上。
       平台與代理先就 <b>全額抽水</b> 正常分潤；<b>jackpot 提撥</b>（預設 10%，會員活動預算）由 <b>平台</b> 從其分得中承擔，不稀釋代理。
       主播薪資可選由 <b>代理支付</b> 或 <b>平台承擔</b>；一桌一主播，整份薪資由單桌承擔、不攤提。
-      階梯分潤級距 30/40/50/60/70%（門檻 100/250/500/800 萬）為示意值，須由實際代理政策設定。
+      階梯分潤級距 10/15/20/25/30%（門檻 50/150/200/250 萬）為實際代理政策設定。
       取得後台真實「平均每把抽水」與「玩家平均停留時數」後即可校準為 v3。
     </div>
   </main>
@@ -367,16 +367,16 @@ const fmt1=n=>(Math.round(n*10)/10).toLocaleString('en-US',{minimumFractionDigit
 
 const RATE=3;                  // 1 台幣 = 3 AR幣
 const twd=ar=>fmt(ar/RATE);    // AR -> 台幣 顯示
-const S={bb:100,buyin:200,potMul:100,hph:80,tc:10,hrs:4,rake:5,cap:2000,jp:10,mode:'agent',shareMode:'fixed',
+const S={bb:100,buyin:200,potMul:100,hph:80,tc:10,hrs:4,rake:5,cap:2000,jp:10,mode:'agent',shareMode:'tier',
   agentShare:80,monthly:3000000,streamerPayer:'platform',streamer:600,rp:5,loss:12,rebuy:1};
 
 // tier thresholds (示意, 月有效抽水量 -> 分潤%)
 const TIERS=[
-  {max:1000000, pct:30, lab:'<100萬'},
-  {max:2500000, pct:40, lab:'100-250萬'},
-  {max:5000000, pct:50, lab:'250-500萬'},
-  {max:8000000, pct:60, lab:'500-800萬'},
-  {max:Infinity, pct:70, lab:'≥800萬'}
+  {max:500000,   pct:10, lab:'<50萬'},
+  {max:1500000,  pct:15, lab:'50-150萬'},
+  {max:2000000,  pct:20, lab:'150-200萬'},
+  {max:2500000,  pct:25, lab:'200-250萬'},
+  {max:Infinity, pct:30, lab:'≥250萬'}
 ];
 function tierFor(v){return TIERS.find(t=>v<t.max);}
 
