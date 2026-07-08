@@ -159,12 +159,22 @@
     <span class="v">營運模型 v2</span>
   </div>
   <h1>主播桌抽水分潤試算器</h1>
-  <p>全頁以 <b>AR幣</b> 計價；AR 比台幣 = <b>3 比 1</b>（1 台幣 = 3 AR）。主播薪資以台幣輸入、自動 ×3 換算；損益同時顯示 AR 與台幣。所有數字為模型推估，尚未接後台數據。</p>
+  <p>左側「<b>顯示幣別</b>」可一鍵切換 <b>AR幣 / 台幣</b>；AR 比台幣 = <b>3 比 1</b>（1 台幣 = 3 AR）。主播薪資一律以台幣輸入。台幣模式下全站金額忠實換算成台幣，方便直接對比運營成本。所有數字為模型推估，尚未接後台數據。</p>
 </header>
 
 <div class="grid">
   <!-- ============ CONTROL RAIL ============ -->
   <aside class="rail">
+    <div class="blk">
+      <h2>顯示幣別</h2>
+      <div class="f">
+        <div class="seg" id="curSeg">
+          <button data-cur="AR" class="on">AR幣</button>
+          <button data-cur="NT">台幣 NT$</button>
+        </div>
+        <div class="hint">切換全站金額顯示。<b>台幣模式</b>下抽水／獲利／成本／封頂全部忠實換算成台幣（AR ÷ 3），方便直接對比運營成本。<br>盲注級距與「代理月有效抽水量」門檻維持以 AR 標示（遊戲原生設定）。</div>
+      </div>
+    </div>
     <div class="blk">
       <h2>牌局參數</h2>
       <div class="f">
@@ -342,7 +352,7 @@
     </section>
 
     <section class="card">
-      <div class="head"><h3>各盲注快速對照（AR）</h3><span class="sub">沿用目前底池 / 把數 / 分潤設定</span></div>
+      <div class="head"><h3>各盲注快速對照</h3><span class="sub">沿用目前底池 / 把數 / 分潤設定・依顯示幣別</span></div>
       <div class="body">
         <table id="cmp">
           <thead><tr><th>盲注</th><th>每小時抽水</th><th>平台淨利</th><th>代理 / 直營池</th><th>主播可付上限</th></tr></thead>
@@ -352,7 +362,7 @@
     </section>
 
     <div class="footnote">
-      <b>幣別：</b>遊戲內金額（盲注 / 底池 / 抽水 / jackpot / 代理量）皆為 <b>AR幣</b>；AR : 台幣 = 3 : 1。主播薪資以台幣輸入、×3 換成 AR 計入；損益同時顯示 AR 與台幣。
+      <b>幣別：</b>遊戲內金額原生為 <b>AR幣</b>，AR : 台幣 = 3 : 1。左側可切換顯示幣別；<b>台幣模式</b>下抽水 / 獲利 / 成本 / 封頂 / 買入皆忠實換算成台幣（÷3）。盲注級距與代理月抽水量門檻維持以 AR 標示。主播薪資一律以台幣輸入。
       <b>讀數前提：</b>所有數字建立在「平均底池等於設定的大盲倍數」與「桌子是活的，有真實玩家在淨輸」兩個假設上。
       平台與代理先就 <b>全額抽水</b> 正常分潤；<b>jackpot 提撥</b>（預設 10%，會員活動預算）由 <b>平台</b> 從其分得中承擔，不稀釋代理。
       主播薪資可選由 <b>代理支付</b> 或 <b>平台承擔</b>；一桌一主播，整份薪資由單桌承擔、不攤提。
@@ -362,7 +372,7 @@
   </main>
 </div>
 
-<footer>ACESROOM 主播桌抽水分潤模型 v2 · 純試算工具，未接後台數據 · AR幣計價，AR:台幣=3:1 · 主播薪資台幣輸入自動換算</footer>
+<footer>ACESROOM 主播桌抽水分潤模型 v2 · 純試算工具，未接後台數據 · 可切換 AR幣 / 台幣顯示，AR:台幣=3:1 · 主播薪資台幣輸入</footer>
 
 <script>
 const $=id=>document.getElementById(id);
@@ -372,7 +382,14 @@ const fmt1=n=>(Math.round(n*10)/10).toLocaleString('en-US',{minimumFractionDigit
 const RATE=3;                  // 1 台幣 = 3 AR幣
 const twd=ar=>fmt(ar/RATE);    // AR -> 台幣 顯示
 const S={bb:100,buyin:200,potMul:100,hph:80,tc:10,hrs:4,days:30,rake:5,cap:2000,jp:10,mode:'agent',shareMode:'tier',
-  agentShare:80,monthly:3000000,streamerPayer:'platform',streamer:600,rp:5,loss:12,rebuy:1};
+  agentShare:80,monthly:3000000,streamerPayer:'platform',streamer:600,rp:5,loss:12,rebuy:1,cur:'AR'};
+
+// —— 顯示幣別（AR ↔ 台幣，忠實換算：1 台幣 = 3 AR）；內部計算一律 AR，僅顯示轉換 ——
+const num = ar => fmt(S.cur==='NT' ? ar/RATE : ar);                       // 純數字，依幣別
+const uU  = () => S.cur==='NT' ? 'NT$' : 'AR';                            // 單位字串
+const M   = ar => S.cur==='NT' ? `NT$ ${fmt(ar/RATE)}` : `${fmt(ar)} AR`; // 帶單位金額
+const sub = (ar,suf='') => S.cur==='NT' ? '' : `<span class="twd">≈ NT$ ${twd(ar)}${suf}</span>`; // AR 模式下的台幣參考列
+const dcur= (ar,rest='') => S.cur==='NT' ? rest : `≈ NT$ ${twd(ar)}${rest?' · '+rest:''}`;         // mini 卡副標
 
 // tier thresholds (示意, 月有效抽水量 -> 分潤%)
 const TIERS=[
@@ -407,14 +424,14 @@ function render(){
   // labels
   $('buyinB').textContent=S.buyin; $('potMulB').textContent=S.potMul; $('hphB').textContent=S.hph;
   const buyinAR=S.buyin*S.bb;
-  $('buyinHint').innerHTML=`買入 = ${S.buyin} BB × ${S.bb} = <b>${fmt(buyinAR)} AR</b> ≈ NT$ ${twd(buyinAR)}`;
+  $('buyinHint').innerHTML=`買入 = ${S.buyin} BB = <b>${M(buyinAR)}</b>${S.cur==='NT'?'':` ≈ NT$ ${twd(buyinAR)}`}`;
   $('rakeB').textContent=S.rake; $('jpB').textContent=S.jp; $('agentShareB').textContent=S.agentShare;
   $('monthlyB').textContent=fmt(S.monthly); $('streamerB').textContent=fmt(S.streamer);
   $('rpB').textContent=S.rp; $('lossB').textContent=S.loss; $('rebuyB').textContent=S.rebuy;
   $('tcB').textContent=S.tc; $('hrsB').textContent=S.hrs; $('daysB').textContent=S.days;
   $('streamerHint').innerHTML=NO_STREAMER.has(S.bb)
     ? `本級距 <b>不派陪玩</b>，主播成本不計入（薪資設定僅供其他級距）。`
-    : `= <b>${fmt(S.streamer*RATE)} AR</b>/時（台幣 ×3）；一桌一主播、不攤提。`;
+    : `= <b>${M(S.streamer*RATE)}</b>/時${S.cur==='NT'?'':'（台幣 ×3）'}；一桌一主播、不攤提。`;
 
   const isAgent=S.mode==='agent';
   $('shareModeRow').style.display=isAgent?'block':'none';
@@ -436,10 +453,10 @@ function render(){
   const streamerOnAgent=isAgent && hasStreamer && S.streamerPayer==='agent';  // 主播是否由代理支付
 
   // KPI
-  $('kHand').innerHTML=`${fmt(R.perHand)} <small>AR/把</small><span class="twd">≈ NT$ ${twd(R.perHand)}</span>`;
-  $('kHour').innerHTML=`${fmt(R.perHour)} <small>AR/時</small><span class="twd">≈ NT$ ${twd(R.perHour)}/時</span>`;
+  $('kHand').innerHTML=`${num(R.perHand)} <small>${uU()}/把</small>${sub(R.perHand)}`;
+  $('kHour').innerHTML=`${num(R.perHour)} <small>${uU()}/時</small>${sub(R.perHour,'/時')}`;
   $('kCap').className='pill '+(R.capped?'cap':'ok');
-  $('kCap').textContent=R.capped?('已觸頂 '+fmt(S.cap)+' AR'):'未觸頂';
+  $('kCap').textContent=R.capped?('已觸頂 '+M(S.cap)):'未觸頂';
 
   let platformNet, agentNet;
   if(isAgent){
@@ -447,10 +464,10 @@ function render(){
     platformNet=platformCut-jackpot-(streamerOnAgent?0:streamerPerTable);
   } else { platformNet=R.perHour-jackpot-streamerPerTable; agentNet=null; }
 
-  $('kPlatform').innerHTML=`${fmt(platformNet)} <small>AR</small><span class="twd">≈ NT$ ${twd(platformNet)}/時</span>`;
+  $('kPlatform').innerHTML=`${num(platformNet)} <small>${uU()}</small>${sub(platformNet,'/時')}`;
   $('kPlatform').parentElement.className='kpi '+(platformNet>=0?'pos':'neg');
   if(isAgent){
-    $('kAgent').innerHTML=`${fmt(agentNet)} <small>AR</small><span class="twd">≈ NT$ ${twd(agentNet)}/時</span>`;
+    $('kAgent').innerHTML=`${num(agentNet)} <small>${uU()}</small>${sub(agentNet,'/時')}`;
     $('kAgentCard').className='kpi '+(agentNet>=0?'pos':'neg');
   }
 
@@ -480,22 +497,22 @@ function render(){
 
   // P&L table
   let rows='';
-  rows+=`<tr><td class="k">總抽水</td><td class="money">${fmt(R.perHour)}</td></tr>`;
-  const streamerRow=`<tr class="cost"><td class="sub-k">主播成本（NT$${fmt(S.streamer)} ×3）</td><td class="money">-${fmt(streamerPerTable)}</td></tr>`;
-  const jackpotRow=`<tr><td class="sub-k">Jackpot 提撥（${S.jp}%，平台承擔）</td><td class="money" style="color:var(--gold)">-${fmt(jackpot)}</td></tr>`;
+  rows+=`<tr><td class="k">總抽水</td><td class="money">${num(R.perHour)}</td></tr>`;
+  const streamerRow=`<tr class="cost"><td class="sub-k">主播成本（NT$${fmt(S.streamer)}${S.cur==='NT'?'':' ×3'}）</td><td class="money">-${num(streamerPerTable)}</td></tr>`;
+  const jackpotRow=`<tr><td class="sub-k">Jackpot 提撥（${S.jp}%，平台承擔）</td><td class="money" style="color:var(--gold)">-${num(jackpot)}</td></tr>`;
   if(isAgent){
-    rows+=`<tr><td class="k">平台分得（${Math.round(platformPct*100)}%）</td><td class="money">${fmt(platformCut)}</td></tr>`;
+    rows+=`<tr><td class="k">平台分得（${Math.round(platformPct*100)}%）</td><td class="money">${num(platformCut)}</td></tr>`;
     rows+=jackpotRow;
     if(hasStreamer && !streamerOnAgent) rows+=streamerRow;
-    rows+=`<tr><td class="k">代理池（${Math.round(agentPct*100)}%）</td><td class="money">${fmt(pool)}</td></tr>`;
+    rows+=`<tr><td class="k">代理池（${Math.round(agentPct*100)}%）</td><td class="money">${num(pool)}</td></tr>`;
     if(hasStreamer && streamerOnAgent) rows+=streamerRow;
-    rows+=`<tr class="grand"><td class="k">代理淨利</td><td class="money">${fmt(agentNet)}</td></tr>`;
-    rows+=`<tr class="grand"><td class="k">平台淨利</td><td class="money">${fmt(platformNet)}</td></tr>`;
+    rows+=`<tr class="grand"><td class="k">代理淨利</td><td class="money">${num(agentNet)}</td></tr>`;
+    rows+=`<tr class="grand"><td class="k">平台淨利</td><td class="money">${num(platformNet)}</td></tr>`;
     $('pnlSub').textContent=!hasStreamer?'此級距不派陪玩':(streamerOnAgent?'Jackpot 由平台承擔、主播由代理支付':'Jackpot 與主播均由平台承擔');
   }else{
     rows+=jackpotRow;
     if(hasStreamer) rows+=streamerRow;
-    rows+=`<tr class="grand"><td class="k">平台淨利</td><td class="money">${fmt(platformNet)}</td></tr>`;
+    rows+=`<tr class="grand"><td class="k">平台淨利</td><td class="money">${num(platformNet)}</td></tr>`;
     $('pnlSub').textContent=hasStreamer?'平台自負 jackpot 與營運':'此級距不派陪玩';
   }
   $('pnl').querySelector('tbody').innerHTML=rows;
@@ -504,21 +521,21 @@ function render(){
   if(isAgent){
     if(agentNet<0){
       $('verdict').className='verdict bad';
-      $('verdict').innerHTML=`⚠ <b>代理在此設定為虧損</b>（${fmt(agentNet)} / 時）。可調高盲注或代理分潤，或把主播改由平台承擔。`;
+      $('verdict').innerHTML=`⚠ <b>代理在此設定為虧損</b>（${M(agentNet)} / 時）。可調高盲注或代理分潤，或把主播改由平台承擔。`;
     }else if(platformNet<0){
       $('verdict').className='verdict bad';
-      $('verdict').innerHTML=`⚠ <b>平台在此設定為虧損</b>（${fmt(platformNet)} / 時）。主播由平台承擔時，平台分得需大於主播薪資，否則應降低代理分潤或降低主播薪。`;
+      $('verdict').innerHTML=`⚠ <b>平台在此設定為虧損</b>（${M(platformNet)} / 時）。主播由平台承擔時，平台分得需大於主播薪資，否則應降低代理分潤或降低主播薪。`;
     }else{
       $('verdict').className='verdict good';
-      $('verdict').innerHTML=`✓ <b>雙方皆有利潤</b>：代理 ${fmt(agentNet)} / 時、平台 ${fmt(platformNet)} / 時。主播由${streamerOnAgent?'代理':'平台'}支付。`;
+      $('verdict').innerHTML=`✓ <b>雙方皆有利潤</b>：代理 ${M(agentNet)} / 時、平台 ${M(platformNet)} / 時。主播由${streamerOnAgent?'代理':'平台'}支付。`;
     }
   }else{
     if(platformNet<0){
       $('verdict').className='verdict bad';
-      $('verdict').innerHTML=`⚠ <b>平台直營在此設定為虧損</b>（${fmt(platformNet)} / 時）。`;
+      $('verdict').innerHTML=`⚠ <b>平台直營在此設定為虧損</b>（${M(platformNet)} / 時）。`;
     }else{
       $('verdict').className='verdict good';
-      $('verdict').innerHTML=`✓ <b>平台直營有利潤</b>（${fmt(platformNet)} / 時），但需自負招募、發薪與營運風險。`;
+      $('verdict').innerHTML=`✓ <b>平台直營有利潤</b>（${M(platformNet)} / 時），但需自負招募、發薪與營運風險。`;
     }
   }
 
@@ -528,11 +545,11 @@ function render(){
   const totStreamer=streamerPerTable*scale, totJackpot=jackpot*scale;
   $('scaleSub').textContent=`${S.tc} 桌 × ${S.hrs} 小時 × ${S.days} 天 = ${fmt(scale)} 桌時`;
   let sc=`
-    <div class="mc"><div class="l">總抽水（AR）</div><div class="n tnum">${fmt(totRake)}</div><div class="d">≈ NT$ ${twd(totRake)} · ${S.tc}桌×${S.hrs}時×${S.days}天</div></div>
-    <div class="mc"><div class="l">Jackpot 池累積（AR）</div><div class="n tnum" style="color:var(--gold)">${fmt(totJackpot)}</div><div class="d">≈ NT$ ${twd(totJackpot)} · 供會員活動</div></div>
-    <div class="mc"><div class="l">平台總淨利（AR）</div><div class="n tnum">${fmt(totPlatform)}</div><div class="d">≈ NT$ ${twd(totPlatform)}</div></div>`;
-  if(isAgent) sc+=`<div class="mc"><div class="l">代理總淨利（AR）</div><div class="n tnum">${fmt(agentNet*scale)}</div><div class="d">≈ NT$ ${twd(agentNet*scale)}</div></div>`;
-  sc+=`<div class="mc"><div class="l">主播總成本（AR）</div><div class="n tnum">${fmt(totStreamer)}</div><div class="d">≈ NT$ ${twd(totStreamer)} · 由${streamerOnAgent?'代理':'平台'}支付</div></div>`;
+    <div class="mc"><div class="l">總抽水（${uU()}）</div><div class="n tnum">${num(totRake)}</div><div class="d">${dcur(totRake,`${S.tc}桌×${S.hrs}時×${S.days}天`)}</div></div>
+    <div class="mc"><div class="l">Jackpot 池累積（${uU()}）</div><div class="n tnum" style="color:var(--gold)">${num(totJackpot)}</div><div class="d">${dcur(totJackpot,'供會員活動')}</div></div>
+    <div class="mc"><div class="l">平台總淨利（${uU()}）</div><div class="n tnum">${num(totPlatform)}</div><div class="d">${dcur(totPlatform)}</div></div>`;
+  if(isAgent) sc+=`<div class="mc"><div class="l">代理總淨利（${uU()}）</div><div class="n tnum">${num(agentNet*scale)}</div><div class="d">${dcur(agentNet*scale)}</div></div>`;
+  sc+=`<div class="mc"><div class="l">主播總成本（${uU()}）</div><div class="n tnum">${num(totStreamer)}</div><div class="d">${dcur(totStreamer,`由${streamerOnAgent?'代理':'平台'}支付`)}</div></div>`;
   $('scaleMini').innerHTML=sc;
 
   // tier ladder
@@ -553,8 +570,8 @@ function render(){
   const playersToCover=streamerPerTable/playerRakeHr;
   $('mini').innerHTML=`
     <div class="mc"><div class="l">推估停留時數</div><div class="n tnum">${fmt1(stayHours)} <small style="font-size:13px;color:var(--mute)">時</small></div><div class="d">買入 ${S.buyin}BB × ${S.rebuy} ÷ ${S.loss} BB/時</div></div>
-    <div class="mc"><div class="l">每位玩家終身貢獻抽水</div><div class="n tnum">${fmt(ltRake)}</div><div class="d">停留 ${fmt1(stayHours)} 小時 × 每時 ${fmt(playerRakeHr)} AR</div></div>
-    <div class="mc"><div class="l">每位玩家終身 → 平台淨利</div><div class="n tnum">${fmt(ltPlatform)}</div><div class="d">平台分潤 ${Math.round(platformPct*100)}% 減 jackpot ${S.jp}%</div></div>
+    <div class="mc"><div class="l">每位玩家終身貢獻抽水（${uU()}）</div><div class="n tnum">${num(ltRake)}</div><div class="d">停留 ${fmt1(stayHours)} 小時 × 每時 ${M(playerRakeHr)}</div></div>
+    <div class="mc"><div class="l">每位玩家終身 → 平台淨利（${uU()}）</div><div class="n tnum">${num(ltPlatform)}</div><div class="d">平台分潤 ${Math.round(platformPct*100)}% 減 jackpot ${S.jp}%</div></div>
     <div class="mc"><div class="l">回收主播本桌成本所需玩家數</div><div class="n tnum">${hasStreamer?fmt1(playersToCover):'—'}</div><div class="d">${hasStreamer?('目前桌上 '+S.rp+' 位'+(playersToCover<=S.rp?'，已覆蓋':'，尚不足')):'本級距不派陪玩'}</div></div>`;
 
   // streamer safe range (budget comes from whoever pays the streamer)
@@ -582,7 +599,7 @@ function render(){
     const pl=r*(isAgent?agentPct:1);
     const smax=NO_STREAMER.has(bb)?null:Math.max(0,(isAgent?(streamerOnAgent?r*agentPct:r*platformPct-jr):(r-jr)));
     const me=(bb===Number(S.bb))?' class="me"':'';
-    return `<tr${me}><td class="k">${LBL[bb]}${NO_STREAMER.has(bb)?' <span style="color:var(--mute);font-size:11px">·無陪玩</span>':''}</td><td class="money">${fmt(r)}</td><td class="money">${fmt(pf)}</td><td class="money">${fmt(pl)}</td><td class="money">${smax===null?'—':fmt(smax)}</td></tr>`;
+    return `<tr${me}><td class="k">${LBL[bb]}${NO_STREAMER.has(bb)?' <span style="color:var(--mute);font-size:11px">·無陪玩</span>':''}</td><td class="money">${num(r)}</td><td class="money">${num(pf)}</td><td class="money">${num(pl)}</td><td class="money">${smax===null?'—':num(smax)}</td></tr>`;
   }).join('');
 }
 
@@ -602,6 +619,8 @@ $('shareSeg').addEventListener('click',e=>{const sm=e.target.dataset.sm;if(!sm)r
   S.shareMode=sm;[...$('shareSeg').children].forEach(b=>b.classList.toggle('on',b===e.target));render();});
 $('payerSeg').addEventListener('click',e=>{const p=e.target.dataset.payer;if(!p)return;
   S.streamerPayer=p;[...$('payerSeg').children].forEach(b=>b.classList.toggle('on',b===e.target));render();});
+$('curSeg').addEventListener('click',e=>{const c=e.target.dataset.cur;if(!c)return;
+  S.cur=c;[...$('curSeg').children].forEach(b=>b.classList.toggle('on',b===e.target));render();});
 render();
 </script>
 </body>
