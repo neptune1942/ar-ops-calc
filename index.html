@@ -771,13 +771,13 @@ const mkPlayer=(name,fee)=>({id:auid(),type:'player',name,fee});
 let AGT=null;   // 樹根 = 聯盟主
 S.agMode='fixed';   // 'fixed' 固定佔比 | 'tier' 階梯分潤
 
-// 代理階梯分潤：10%→80%。10~30% 每 50 萬一級；超過 30% 後每 100 萬一級（+5%/級）。門檻＝下線累積流水(AR)
+// 代理階梯分潤：10%→80%（+5%/級）。10~30% 每 50 萬一級；30~70% 每 100 萬一級；上緣 70/75/80% = 1000-1500/1500-2000/2000萬+。門檻＝下線累積流水(AR)
 const AG_TIERS=[
   {min:0,        pct:10}, {min:500000,   pct:15}, {min:1000000,  pct:20},
   {min:1500000,  pct:25}, {min:2000000,  pct:30}, {min:3000000,  pct:35},
   {min:4000000,  pct:40}, {min:5000000,  pct:45}, {min:6000000,  pct:50},
   {min:7000000,  pct:55}, {min:8000000,  pct:60}, {min:9000000,  pct:65},
-  {min:10000000, pct:70}, {min:11000000, pct:75}, {min:12000000, pct:80}
+  {min:10000000, pct:70}, {min:15000000, pct:75}, {min:20000000, pct:80}
 ];
 function agTierPct(v){ let p=AG_TIERS[0].pct; for(const t of AG_TIERS){ if(v>=t.min) p=t.pct; } return p; }
 const wan=v=>v>=10000?(v/10000)+'萬':fmt(v);   // 門檻標籤（以 AR「萬」表示）
