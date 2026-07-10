@@ -165,9 +165,10 @@
   .agintro b{color:var(--ink);}
   .agbar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:16px;}
   .agbar .seg{width:auto;}
-  .agbar .btn{border:1px solid var(--hair);background:#fff;font-family:inherit;font-size:12.5px;font-weight:600;
+  .btn{border:1px solid var(--hair);background:#fff;font-family:inherit;font-size:12.5px;font-weight:600;
     color:var(--body);padding:7px 13px;border-radius:var(--r-sm);cursor:pointer;box-shadow:var(--shadow);}
-  .agbar .btn:hover{border-color:var(--brand);color:var(--brand-ink);}
+  .btn:hover{border-color:var(--brand);color:var(--brand-ink);}
+  .btn.done{border-color:var(--teal);color:var(--teal);}
   .tree{background:var(--paper);border:1px solid var(--hair);border-radius:var(--r);box-shadow:var(--shadow);
     padding:12px 14px;overflow-x:auto;}
   .node{display:flex;align-items:center;gap:9px;padding:7px 9px;border-radius:var(--r-sm);margin:3px 0;
@@ -483,6 +484,13 @@
     <div id="agWarn" class="agwarn" hidden></div>
 
     <div class="tree" id="agentTree"></div>
+
+    <section class="card" id="agReportCard" style="margin-top:20px">
+      <div class="head"><h3>分潤 &amp; 流水匯總（對帳用）</h3>
+        <button class="btn" id="agCopyBtn" style="margin-left:auto">⧉ 複製 CSV</button></div>
+      <div class="body"><div id="agReportBody" style="overflow-x:auto"></div></div>
+      <div class="verdict good" id="agRecon" style="margin:0 20px 16px"></div>
+    </section>
 
     <div class="footnote" style="margin-top:18px">
       <b>算法：</b>由下往上遞迴。玩家的服務費往上匯總成每個代理的「下線總服務費」；代理毛得＝下線總量×佔比%，代理淨得＝毛得減去其<b>直屬下級代理</b>的毛得（等同賺自己與下線代理的佔比價差）。聯盟主得＝最頂代理下線總量×(1−最頂代理佔比%)。
@@ -870,6 +878,52 @@ function agRefresh(){
   const w=$('agWarn');
   if(warns.length){ w.hidden=false; w.innerHTML=`<b>⚠ 佔比設定警示（${warns.length}）</b><ul>`+warns.map(x=>`<li>${x}</li>`).join('')+`</ul>`; }
   else { w.hidden=true; w.innerHTML=''; }
+  agReport();
+}
+
+// 對帳報表：攤平所有代理成一張表；含對帳檢核 Σ代理淨得+聯盟主得 = 總流水
+let AG_REPORT_ROWS=[];
+function agReport(){
+  const rows=[];
+  (function walk(n,parentName){
+    (n.children||[]).forEach(c=>{
+      if(c.type==='agent'){
+        const childGross=(c.children||[]).filter(x=>x.type==='agent').reduce((s,x)=>s+x.gross,0);
+        const players=(c.children||[]).filter(x=>x.type==='player');
+        const directFee=players.reduce((s,x)=>s+(x.fee||0),0);
+        rows.push({name:c.name,parent:parentName,pct:c.effPct,vol:c.subtree,gross:c.gross,childGross,net:c.net,players:players.length,directFee});
+        walk(c,c.name);
+      }
+    });
+  })(AGT,AGT.name);
+  AG_REPORT_ROWS=rows;
+  const sumNet=rows.reduce((s,r)=>s+r.net,0)+AGT.net;
+  let h=`<table><thead><tr>
+    <th>名稱</th><th>上級</th><th>佔比%</th><th>流水(下線總量)</th><th>直屬玩家流水</th><th>毛得</th><th>減下級代理</th><th>淨得</th></tr></thead><tbody>`;
+  rows.forEach(r=>{ h+=`<tr${r.net<0?' class="cost"':''}><td class="k">${r.name}</td><td class="sub-k" style="padding-left:0">${r.parent}</td>`+
+    `<td>${r.pct}%</td><td class="money">${num(r.vol)}</td><td class="money">${r.directFee?num(r.directFee):'—'}</td>`+
+    `<td class="money">${num(r.gross)}</td><td class="money">${r.childGross?('-'+num(r.childGross)):'—'}</td><td class="money">${num(r.net)}</td></tr>`; });
+  h+=`<tr class="me"><td class="k">聯盟主</td><td class="sub-k" style="padding-left:0">—</td><td>—</td>`+
+    `<td class="money">${num(AGT.subtree)}</td><td class="money">—</td><td class="money">—</td><td class="money">—</td><td class="money">${num(AGT.net)}</td></tr>`;
+  h+=`<tr class="grand"><td class="k">合計・淨得</td><td>—</td><td>—</td><td class="money">${num(AGT.subtree)}</td><td class="money">—</td><td class="money">—</td><td class="money">—</td><td class="money">${num(sumNet)}</td></tr>`;
+  h+=`</tbody></table>`;
+  $('agReportBody').innerHTML=h;
+  const ok=Math.abs(sumNet-AGT.subtree)<1;
+  const rc=$('agRecon'); rc.className='verdict '+(ok?'good':'bad');
+  rc.innerHTML=ok
+    ? `✓ <b>對帳平衡</b>：Σ代理淨得 + 聯盟主得 = <b>${num(sumNet)} ${uU()}</b> ＝ 總流水 <b>${num(AGT.subtree)} ${uU()}</b>。`
+    : `✗ <b>對帳不平衡</b>：Σ淨得+聯盟主 ${num(sumNet)} ≠ 總流水 ${num(AGT.subtree)}（誤差 ${num(Math.abs(sumNet-AGT.subtree))}）。`;
+}
+function agCSV(){
+  const unit=S.cur==='NT'?'NT$':'AR';
+  const conv=v=>S.cur==='NT'?Math.round(v/RATE):Math.round(v);
+  const q=s=>'"'+String(s).replace(/"/g,'""')+'"';
+  const lines=[['名稱','上級','佔比%',`流水下線總量(${unit})`,`直屬玩家流水(${unit})`,`毛得(${unit})`,`減下級代理(${unit})`,`淨得(${unit})`].join(',')];
+  AG_REPORT_ROWS.forEach(r=>lines.push([q(r.name),q(r.parent),r.pct,conv(r.vol),conv(r.directFee),conv(r.gross),conv(r.childGross),conv(r.net)].join(',')));
+  lines.push([q('聯盟主'),'—','—',conv(AGT.subtree),'','','',conv(AGT.net)].join(','));
+  const sumNet=AG_REPORT_ROWS.reduce((s,r)=>s+r.net,0)+AGT.net;
+  lines.push([q('合計'),'','','','','','',conv(sumNet)].join(','));
+  return lines.join('\r\n');
 }
 function agTierRef(){
   const box=$('agTierRef');
@@ -899,6 +953,13 @@ $('agModeSeg').addEventListener('click',e=>{const m=e.target.dataset.m;if(!m)ret
   S.agMode=m;[...$('agModeSeg').children].forEach(b=>b.classList.toggle('on',b===e.target));agRender();});
 $('agReset').addEventListener('click',()=>{ seedTree(); agRender(); });
 $('agClear').addEventListener('click',()=>{ AGT={id:auid(),type:'root',name:'聯盟主',children:[]}; agRender(); });
+$('agCopyBtn').addEventListener('click',async()=>{
+  const btn=$('agCopyBtn'), csv=agCSV();
+  try{ await navigator.clipboard.writeText(csv); }
+  catch(e){ const ta=document.createElement('textarea'); ta.value=csv; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); }
+  btn.textContent='✓ 已複製 CSV'; btn.classList.add('done');
+  setTimeout(()=>{ btn.textContent='⧉ 複製 CSV'; btn.classList.remove('done'); },1600);
+});
 
 seedTree(); agRender();
 render();
