@@ -133,8 +133,8 @@
     padding:11px 14px;background:var(--brand-wash);border-radius:var(--r-sm);}
   .tier-row .lbl{font-size:12.5px;color:var(--body);}
   .tier-row .big{margin-left:auto;font-size:21px;font-weight:780;color:var(--brand-ink);font-variant-numeric:tabular-nums;}
-  .ladder{display:flex;gap:6px;margin-top:9px;}
-  .ladder .rung{flex:1;text-align:center;font-size:11px;color:var(--mute);
+  .ladder{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px;}
+  .ladder .rung{flex:1 1 92px;text-align:center;font-size:11px;color:var(--mute);
     border:1px solid var(--hair);border-radius:6px;padding:6px 3px;background:#fff;line-height:1.4;}
   .ladder .rung.on{border-color:var(--brand);background:var(--brand-wash);color:var(--brand-ink);font-weight:700;}
   .ladder .rung b{display:block;font-size:13px;color:inherit;}
@@ -341,8 +341,8 @@
       </div>
       <div class="f" id="tierRow" style="display:none">
         <label>該代理月有效抽水量（AR）<b id="monthlyB">3,000,000</b></label>
-        <input type="range" id="monthly" min="0" max="20000000" value="3000000" step="100000">
-        <div class="hint">依量級自動套用分潤級距：10/15/20/25/30%（門檻可由實際政策調整）。</div>
+        <input type="range" id="monthly" min="0" max="25000000" value="3000000" step="100000">
+        <div class="hint">依量級自動套用分潤級距：10%～80%（與代理分潤試算同一套階梯，見下方級距表）。</div>
       </div>
       <div class="f" id="payerRow">
         <label>主播薪資由誰付</label>
@@ -443,7 +443,7 @@
       <b>讀數前提：</b>所有數字建立在「平均底池等於設定的大盲倍數」與「桌子是活的，有真實玩家在淨輸」兩個假設上。
       平台與代理先就 <b>全額抽水</b> 正常分潤；<b>jackpot 提撥</b>（預設 10%，會員活動預算）由 <b>平台</b> 從其分得中承擔，不稀釋代理。
       主播薪資可選由 <b>代理支付</b> 或 <b>平台承擔</b>；一桌一主播，整份薪資由單桌承擔、不攤提。
-      階梯分潤級距 10/15/20/25/30%（門檻 50/150/200/250 萬）為實際代理政策設定。
+      階梯分潤級距 10%～80%（10~30% 每 50 萬、30~70% 每 100 萬、上緣 70/75/80%=1000-1500/1500-2000/2000萬+），與代理分潤試算共用同一套。
       取得後台真實「平均每把抽水」與「玩家平均停留時數」後即可校準為 v3。
     </div>
   </main>
@@ -518,15 +518,21 @@ const M   = ar => S.cur==='NT' ? `NT$ ${fmt(ar/RATE)}` : `${fmt(ar)} AR`; // 帶
 const sub = (ar,suf='') => S.cur==='NT' ? '' : `<span class="twd">≈ NT$ ${twd(ar)}${suf}</span>`; // AR 模式下的台幣參考列
 const dcur= (ar,rest='') => S.cur==='NT' ? rest : `≈ NT$ ${twd(ar)}${rest?' · '+rest:''}`;         // mini 卡副標
 
-// tier thresholds (示意, 月有效抽水量 -> 分潤%)
+// 統一階梯分潤級距：10%→80%（+5%/級），主播桌代理分潤與代理分潤試算共用同一份。
+// 10~30% 每 50 萬一級；30~70% 每 100 萬一級；上緣 70/75/80% = 1000-1500 / 1500-2000 / 2000萬+。門檻＝累積流水(AR)。
 const TIERS=[
-  {max:500000,   pct:10, lab:'<50萬'},
-  {max:1500000,  pct:15, lab:'50-150萬'},
-  {max:2000000,  pct:20, lab:'150-200萬'},
-  {max:2500000,  pct:25, lab:'200-250萬'},
-  {max:Infinity, pct:30, lab:'≥250萬'}
+  {min:0,        pct:10}, {min:500000,   pct:15}, {min:1000000,  pct:20},
+  {min:1500000,  pct:25}, {min:2000000,  pct:30}, {min:3000000,  pct:35},
+  {min:4000000,  pct:40}, {min:5000000,  pct:45}, {min:6000000,  pct:50},
+  {min:7000000,  pct:55}, {min:8000000,  pct:60}, {min:9000000,  pct:65},
+  {min:10000000, pct:70}, {min:15000000, pct:75}, {min:20000000, pct:80}
 ];
-function tierFor(v){return TIERS.find(t=>v<t.max);}
+function tierPct(v){ let p=TIERS[0].pct; for(const t of TIERS){ if(v>=t.min) p=t.pct; } return p; }
+function tierIndex(v){ let i=0; TIERS.forEach((t,idx)=>{ if(v>=t.min) i=idx; }); return i; }
+function tierFor(v){ return TIERS[tierIndex(v)]; }
+const wan=v=>v>=10000?(v/10000)+'萬':fmt(v);   // 門檻標籤（以 AR「萬」表示）
+function tierLabel(i){ const lo=TIERS[i].min, hi=TIERS[i+1]?TIERS[i+1].min:null;
+  return hi===null?('≥'+wan(lo)):(lo===0?('<'+wan(hi)):(wan(lo)+'–'+wan(hi))); }
 
 const CAPS={6:120,30:600,50:1000,100:2000,200:4000,300:6000,400:8000,600:12000};  // 盲注 BB(AR) -> 封頂(AR)＝20×大盲
 const NO_STREAMER=new Set([6,30,50]);   // 此級距不派陪玩主播
@@ -684,8 +690,8 @@ function render(){
     const t=tierFor(S.monthly);
     $('tierVol').textContent=fmt(S.monthly);
     $('tierPct').textContent=t.pct+'%';
-    $('ladder').innerHTML=TIERS.map(x=>
-      `<div class="rung ${x===t?'on':''}"><b>${x.pct}%</b>${x.lab}</div>`).join('');
+    $('ladder').innerHTML=TIERS.map((x,i)=>
+      `<div class="rung ${x===t?'on':''}"><b>${x.pct}%</b>${tierLabel(i)}</div>`).join('');
   }
 
   // player lifetime — stay hours derived from buy-in depth ÷ loss rate × re-buys
@@ -771,18 +777,8 @@ const mkPlayer=(name,fee)=>({id:auid(),type:'player',name,fee});
 let AGT=null;   // 樹根 = 聯盟主
 S.agMode='fixed';   // 'fixed' 固定佔比 | 'tier' 階梯分潤
 
-// 代理階梯分潤：10%→80%（+5%/級）。10~30% 每 50 萬一級；30~70% 每 100 萬一級；上緣 70/75/80% = 1000-1500/1500-2000/2000萬+。門檻＝下線累積流水(AR)
-const AG_TIERS=[
-  {min:0,        pct:10}, {min:500000,   pct:15}, {min:1000000,  pct:20},
-  {min:1500000,  pct:25}, {min:2000000,  pct:30}, {min:3000000,  pct:35},
-  {min:4000000,  pct:40}, {min:5000000,  pct:45}, {min:6000000,  pct:50},
-  {min:7000000,  pct:55}, {min:8000000,  pct:60}, {min:9000000,  pct:65},
-  {min:10000000, pct:70}, {min:15000000, pct:75}, {min:20000000, pct:80}
-];
-function agTierPct(v){ let p=AG_TIERS[0].pct; for(const t of AG_TIERS){ if(v>=t.min) p=t.pct; } return p; }
-const wan=v=>v>=10000?(v/10000)+'萬':fmt(v);   // 門檻標籤（以 AR「萬」表示）
-function agTierLabel(i){ const lo=AG_TIERS[i].min, hi=AG_TIERS[i+1]?AG_TIERS[i+1].min:null;
-  return hi===null?('≥'+wan(lo)):(lo===0?('<'+wan(hi)):(wan(lo)+'–'+wan(hi))); }
+// 代理分潤試算與主播桌代理分潤共用同一份階梯（見頂部 TIERS / tierPct / tierLabel）
+const AG_TIERS=TIERS, agTierPct=tierPct, agTierLabel=tierLabel;
 
 function seedTree(){
   AGT={id:auid(),type:'root',name:'聯盟主',children:[
