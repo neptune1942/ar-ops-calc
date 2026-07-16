@@ -236,6 +236,8 @@
 <div class="tabs" id="tabs">
   <button data-view="rake" class="on">主播桌抽水試算</button>
   <button data-view="agent">代理分潤試算</button>
+  <button data-view="pay">金流成本試算</button>
+  <button data-view="topup">充值發點試算</button>
 </div>
 
 <div id="view-rake" class="view">
@@ -499,6 +501,115 @@
   </main>
 </div><!--/view-agent-->
 
+<div id="view-pay" class="view" hidden>
+  <main class="agstage">
+    <p class="agintro">
+      比較兩家第三方金流的<b>加權綜合金流成本</b>：我方<b>綠卡（GGCard）</b> vs 朋友端<b>智冠 MyCard</b>。
+      因平台<b>尚未營運、無真實通路占比</b>，下方占比為<b>可調假設情境</b>（預設為台灣線上遊戲常見結構），調整即時重算。
+      費率基準統一為<b>手續費 %</b>（綠卡原為撥款比例，已換算成本＝100%−撥款比例）。純模型，未接後台。
+    </p>
+
+    <div class="kpirow" style="margin-bottom:16px">
+      <div class="kpi hl"><div class="lab">綠卡 加權金流成本</div><div class="num tnum" id="payGreen">-</div></div>
+      <div class="kpi"><div class="lab">智冠 MyCard 加權成本</div><div class="num tnum" id="payZhi">-</div></div>
+      <div class="kpi pos"><div class="lab">綠卡成本優勢</div><div class="num tnum" id="payDiff">-</div></div>
+      <div class="kpi"><div class="lab">綠卡月金流成本</div><div class="num tnum" id="payAbs">-</div></div>
+    </div>
+
+    <div class="agbar">
+      <div class="seg" id="curSeg3" style="max-width:200px">
+        <button data-cur="AR" class="on">AR幣</button>
+        <button data-cur="NT">台幣 NT$</button>
+      </div>
+      <button class="btn" id="payReset">↺ 還原預設占比</button>
+    </div>
+
+    <section class="card">
+      <div class="head"><h3>月入金（儲值）總額</h3><span class="sub">估算絕對金流成本用・以 AR 輸入</span></div>
+      <div class="body">
+        <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap">
+          <input type="number" id="payVol" value="10000000" min="0" step="100000" style="max-width:220px">
+          <span class="hint" id="payVolHint"></span>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="head"><h3>通路占比與費率比較</h3><span class="sub">占比可調・假設情境</span></div>
+      <div class="body" style="overflow-x:auto"><table id="payTbl">
+        <thead><tr><th>通路</th><th>占比%</th><th>綠卡費率</th><th>智冠費率</th><th>綠卡月成本</th><th>智冠月成本</th></tr></thead>
+        <tbody></tbody>
+      </table></div>
+      <div class="verdict good" id="payVerdict" style="margin:0 20px 16px"></div>
+    </section>
+
+    <div class="footnote" style="margin-top:18px">
+      <b>算法：</b>加權金流成本 = Σ（各通路占比 × 該通路費率）。綠卡未簽之通路（電信代收／PayPal）不計入綠卡、並顯示綠卡覆蓋率；智冠涵蓋全通路。
+      <b>費率來源：</b>綠卡＝廠商遊戲綠卡審核通過之撥款比例換算；智冠 MyCard＝朋友端簽約條件（信用卡取 7–8% 中值 7.5%）。
+      <b>提醒：</b>實際綜合成本取決於真實通路占比，營運後以後台數據校準；此頁為股東報告用之情境試算。
+    </div>
+  </main>
+</div><!--/view-pay-->
+
+<div id="view-topup" class="view" hidden>
+  <main class="agstage">
+    <p class="agintro">
+      規劃各充值渠道的<b>發點比值</b>：玩家付台幣 → 渠道抽手續費 → 我方淨收 → 決定發給玩家多少 <b>AR 點數</b>。
+      基準 <b id="tuBaseLbl">3 AR = 1 台幣</b>（可改）。設定<b>目標毛利率</b>即可反推各渠道「建議發點比值」。純模型，未接後台。
+    </p>
+
+    <div class="kpirow" style="margin-bottom:16px">
+      <div class="kpi hl"><div class="lab">基準：1 AR 面額</div><div class="num tnum" id="tuFace">-</div></div>
+      <div class="kpi"><div class="lab">目標毛利率</div><div class="num tnum" id="tuMarginKpi">-</div></div>
+      <div class="kpi"><div class="lab">幣商價差（回收 vs 販售）</div><div class="num tnum" id="tuDealerKpi">-</div></div>
+      <div class="kpi pos"><div class="lab">幣商每採購 → 我方賺</div><div class="num tnum" id="tuDealerProfitKpi">-</div></div>
+    </div>
+
+    <section class="card">
+      <div class="head"><h3>基準與目標</h3><span class="sub">AR : 台幣 比值與目標毛利</span></div>
+      <div class="body">
+        <div style="display:flex;gap:24px;align-items:center;flex-wrap:wrap">
+          <label style="font-size:13px;color:var(--body);font-weight:550">基準比值
+            <input type="number" id="tuBase" value="3" min="0.1" step="0.1" style="width:80px;margin:0 6px">AR = 1 台幣</label>
+          <label style="font-size:13px;color:var(--body);font-weight:550;display:flex;align-items:center;gap:8px">
+            目標毛利率 <input type="range" id="tuMargin" min="0" max="60" value="15" step="1" style="width:160px"><b id="tuMarginB" style="color:var(--brand-ink)">15</b>%</label>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="head"><h3>A / C · 充值渠道發點試算</h3><span class="sub">綠卡 / Apple / Google・手續費與發點比值可調</span></div>
+      <div class="body" style="overflow-x:auto"><table id="tuTbl">
+        <thead><tr><th>渠道</th><th>手續費%</th><th>發點比值<br>(AR/元)</th><th>玩家付 NT$100<br>→ 得 AR</th><th>我方淨收<br>NT$</th><th>每 AR 成本<br>NT$</th><th>毛利率</th><th>建議比值<br>(達標)</th></tr></thead>
+        <tbody></tbody>
+      </table></div>
+      <div class="verdict good" id="tuVerdict" style="margin:0 20px 16px"></div>
+    </section>
+
+    <section class="card">
+      <div class="head"><h3>B · 幣商採購 / 回收比值</h3><span class="sub">賣給幣商 vs 從幣商買回的價差</span></div>
+      <div class="body">
+        <div style="display:flex;gap:24px;align-items:flex-end;flex-wrap:wrap;margin-bottom:8px">
+          <label style="font-size:13px;color:var(--body);font-weight:550">販售比值（賣給幣商）
+            <input type="number" id="tuSell" value="3" min="0.1" step="0.05" style="width:80px;margin:0 6px">AR = 1 台幣</label>
+          <label style="font-size:13px;color:var(--body);font-weight:550">回收比值（向幣商買回）
+            <input type="number" id="tuBuy" value="3.3" min="0.1" step="0.05" style="width:80px;margin:0 6px">AR = 1 台幣</label>
+          <label style="font-size:13px;color:var(--body);font-weight:550">幣商採購額
+            <input type="number" id="tuDealerAmt" value="100000" min="0" step="10000" style="width:120px;margin:0 6px">台幣</label>
+        </div>
+        <table id="tuDealerTbl"><tbody></tbody></table>
+        <div class="verdict good" id="tuDealerVerdict" style="margin:14px 0 4px"></div>
+      </div>
+    </section>
+
+    <div class="footnote" style="margin-top:18px">
+      <b>算法：</b>玩家付 P 台幣，渠道手續費 f → 我方淨收 P(1−f)；發點比值 r（AR/元）→ 玩家得 P·r AR。發點面額成本 = 得 AR ÷ 基準比值（台幣）。<b>毛利率 = 1 − r ÷ (基準 × (1−f))</b>；建議比值 = 基準 × (1−f) × (1−目標毛利)。
+      <b>幣商：</b>販售比值 s、回收比值 b（皆 AR=1 台幣）；幣商每採購 A 台幣得 A·s AR，我方回收同額 AR 付 A·s/b 台幣，<b>我方賺 A(1−s/b)</b>，價差毛利 = 1 − s/b（需回收比值 &gt; 販售比值）。
+      <b>App 費率（2026）：</b>Apple 標準 30%、小型企業/訂閱續期 15%；Google Play 標準 30%、首年 100 萬美元內 15%（台灣仍舊制）。年收未破百萬美元多為 15%。
+    </div>
+  </main>
+</div><!--/view-topup-->
+
 <footer>ACESROOM 主播桌抽水分潤模型 v2 · 純試算工具，未接後台數據 · 可切換 AR幣 / 台幣顯示，AR:台幣=3:1 · 主播薪資台幣輸入</footer>
 
 <script>
@@ -757,17 +868,23 @@ function setCur(c){
   S.cur=c;
   [...$('curSeg').children].forEach(b=>b.classList.toggle('on',b.dataset.cur===c));
   [...$('curSeg2').children].forEach(b=>b.classList.toggle('on',b.dataset.cur===c));
-  render(); if(AGT) agRefresh();
+  [...$('curSeg3').children].forEach(b=>b.classList.toggle('on',b.dataset.cur===c));
+  render(); if(AGT) agRefresh(); payRender();
 }
 $('curSeg').addEventListener('click',e=>{if(e.target.dataset.cur)setCur(e.target.dataset.cur);});
 $('curSeg2').addEventListener('click',e=>{if(e.target.dataset.cur)setCur(e.target.dataset.cur);});
+$('curSeg3').addEventListener('click',e=>{if(e.target.dataset.cur)setCur(e.target.dataset.cur);});
 
 // 頁籤切換
 $('tabs').addEventListener('click',e=>{const v=e.target.dataset.view;if(!v)return;
   [...$('tabs').children].forEach(b=>b.classList.toggle('on',b===e.target));
   $('view-rake').hidden=(v!=='rake');
   $('view-agent').hidden=(v!=='agent');
+  $('view-pay').hidden=(v!=='pay');
+  $('view-topup').hidden=(v!=='topup');
   if(v==='agent') agRefresh();
+  if(v==='pay') payRender();
+  if(v==='topup') topupRender();
 });
 
 // ============ 代理分潤試算（動態樹） ============
@@ -957,7 +1074,136 @@ $('agCopyBtn').addEventListener('click',async()=>{
   setTimeout(()=>{ btn.textContent='⧉ 複製 CSV'; btn.classList.remove('done'); },1600);
 });
 
+// ============ 金流成本試算（綠卡 vs 智冠 MyCard） ============
+// 費率＝手續費 %（綠卡由撥款比例換算：成本=100%-撥款比例；智冠為簽約手續費，信用卡取 7-8% 中值 7.5）
+const PAYCH=[
+  {k:'信用卡（台灣）',        green:3.0,  zhi:7.5,  occ:40},
+  {k:'銀行轉帳（網路 ATM）',  green:1.5,  zhi:5.0,  occ:25},
+  {k:'電子／行動支付（街口）', green:6.0,  zhi:8.0,  occ:15},
+  {k:'超商／點數（實體）',     green:12.5, zhi:21.0, occ:15},
+  {k:'信用卡（非台灣）',      green:3.5,  zhi:7.5,  occ:5},
+  {k:'電信業者代收',          green:null, zhi:13.0, occ:0},
+  {k:'PayPal',               green:null, zhi:8.0,  occ:0},
+];
+const PAY_DEFAULT=PAYCH.map(c=>c.occ);
+const PAY={vol:10000000};
+
+function payBuild(){
+  $('payTbl').querySelector('tbody').innerHTML=PAYCH.map((c,i)=>`<tr>
+    <td class="k">${c.k}</td>
+    <td><input type="number" class="pay-occ" data-i="${i}" min="0" step="1" value="${c.occ}" style="width:66px;text-align:right;padding:5px 7px"></td>
+    <td class="money">${c.green==null?'<span style="color:var(--mute)">未簽</span>':c.green.toFixed(1)+'%'}</td>
+    <td class="money">${c.zhi.toFixed(1)}%</td>
+    <td class="money" id="pay-gc-${i}">-</td>
+    <td class="money" id="pay-zc-${i}">-</td></tr>`).join('')
+    +`<tr class="grand"><td class="k">加權合計</td><td id="pay-occ-sum">-</td>
+      <td class="money" id="pay-grate">-</td><td class="money" id="pay-zrate">-</td>
+      <td class="money" id="pay-gtot">-</td><td class="money" id="pay-ztot">-</td></tr>`;
+}
+function payCalc(){
+  const t=PAYCH.reduce((s,c)=>s+Math.max(0,c.occ),0);
+  let gW=0,gOcc=0,zW=0;
+  PAYCH.forEach(c=>{ const w=t>0?Math.max(0,c.occ)/t:0; c._w=w;
+    if(c.green!=null){ gW+=w*c.green; gOcc+=w; } zW+=w*c.zhi; });
+  return {t,gW,gOcc,zW,gRate:gOcc>0?gW/gOcc:0,zRate:zW};
+}
+function payRender(){
+  if(!$('pay-gc-0')) return;
+  const r=payCalc(), vol=PAY.vol;
+  PAYCH.forEach((c,i)=>{ const chVol=vol*c._w;
+    $('pay-gc-'+i).innerHTML=c.green==null?'<span style="color:var(--mute)">—</span>':num(chVol*c.green/100);
+    $('pay-zc-'+i).innerHTML=num(chVol*c.zhi/100);
+  });
+  $('pay-occ-sum').textContent=r.t+'%';
+  $('pay-grate').textContent=r.gRate.toFixed(2)+'%';
+  $('pay-zrate').textContent=r.zRate.toFixed(2)+'%';
+  const gTot=vol*r.gW/100, zTot=vol*r.zW/100;
+  $('pay-gtot').textContent=num(gTot); $('pay-ztot').textContent=num(zTot);
+  $('payGreen').innerHTML=r.gRate.toFixed(2)+' <small>%</small>';
+  $('payZhi').innerHTML=r.zRate.toFixed(2)+' <small>%</small>';
+  $('payDiff').innerHTML='−'+(r.zRate-r.gRate).toFixed(2)+' <small>pp</small>';
+  $('payAbs').innerHTML=`${num(gTot)} <small>${uU()}</small>${sub(gTot,'/月')}`;
+  $('payVolHint').innerHTML=`= <b>${M(vol)}</b>${S.cur==='NT'?'':` ≈ NT$ ${twd(vol)}`}／月；綠卡覆蓋通路占比 <b>${(r.gOcc*100).toFixed(0)}%</b>`;
+  const save=zTot-gTot;
+  $('payVerdict').innerHTML=`✓ 以月入金 <b>${M(vol)}</b> 計：綠卡加權金流成本 <b>${r.gRate.toFixed(2)}%</b>（約 ${M(gTot)}／月），智冠 MyCard <b>${r.zRate.toFixed(2)}%</b>（約 ${M(zTot)}／月），<b>每月省約 ${M(save)}</b>。`
+    +(r.gOcc<0.999?`（綠卡未提供電信代收／PayPal，占比 ${((1-r.gOcc)*100).toFixed(0)}% 需另尋通路）`:'');
+}
+$('payTbl').addEventListener('input',e=>{ const t=e.target; if(!t.classList.contains('pay-occ'))return;
+  PAYCH[+t.dataset.i].occ=Math.max(0,Number(t.value)||0); payRender(); });
+$('payVol').addEventListener('input',e=>{ PAY.vol=Math.max(0,Number(e.target.value)||0); payRender(); });
+$('payReset').addEventListener('click',()=>{ PAYCH.forEach((c,i)=>c.occ=PAY_DEFAULT[i]); payBuild(); payRender(); });
+
+// ============ 充值發點試算（各渠道發點比值 + 幣商採購/回收） ============
+const TOPUP={base:3, margin:15, sell:3, buy:3.3, dealerAmt:100000};
+const TUCH=[
+  {k:'遊戲綠卡（加權）', fee:4.5, r:3},
+  {k:'Apple App Store',  fee:30,  r:3},
+  {k:'Google Play',      fee:30,  r:3},
+];
+function topupBuild(){
+  $('tuTbl').querySelector('tbody').innerHTML=TUCH.map((c,i)=>`<tr>
+    <td class="k">${c.k}</td>
+    <td><input type="number" class="tu-fee" data-i="${i}" min="0" max="90" step="0.5" value="${c.fee}" style="width:66px;text-align:right;padding:5px 7px"></td>
+    <td><input type="number" class="tu-r" data-i="${i}" min="0" step="0.05" value="${c.r}" style="width:66px;text-align:right;padding:5px 7px"></td>
+    <td class="money" id="tu-ar-${i}">-</td>
+    <td class="money" id="tu-net-${i}">-</td>
+    <td class="money" id="tu-cost-${i}">-</td>
+    <td class="money" id="tu-mg-${i}">-</td>
+    <td class="money" id="tu-sug-${i}">-</td></tr>`).join('');
+}
+function topupRender(){
+  if(!$('tu-ar-0')) return;
+  const B=TOPUP.base, m=TOPUP.margin/100;
+  $('tuBaseLbl').textContent=`${fmt1(B)} AR = 1 台幣`;
+  $('tuFace').innerHTML=`${(1/B).toFixed(3)} <small>台幣</small>`;
+  $('tuMarginKpi').innerHTML=`${TOPUP.margin} <small>%</small>`;
+  $('tuMarginB').textContent=TOPUP.margin;
+  let anyNeg=false;
+  TUCH.forEach((c,i)=>{
+    const f=c.fee/100, r=c.r;
+    const getAR=100*r, net=100*(1-f);
+    const costPerAR = getAR>0? net/getAR : 0;
+    const margin = (B>0&&r>0)? (1 - r/(B*(1-f))) : 0;
+    const suggR = B*(1-f)*(1-m);
+    if(margin<0) anyNeg=true;
+    $('tu-ar-'+i).textContent=fmt(getAR);
+    $('tu-net-'+i).textContent=fmt1(net);
+    $('tu-cost-'+i).textContent=costPerAR.toFixed(3);
+    const mg=$('tu-mg-'+i); mg.textContent=(margin*100).toFixed(1)+'%';
+    mg.style.color = margin<0?'var(--brand)':'var(--teal)';
+    $('tu-sug-'+i).textContent=fmt1(suggR);
+  });
+  $('tuVerdict').className='verdict '+(anyNeg?'bad':'good');
+  $('tuVerdict').innerHTML=anyNeg
+    ? `⚠ 有渠道<b>發點比值過高導致毛利為負</b>（發點面額超過淨收）。把該渠道發點比值降到「建議比值」以下即可達標 ${TOPUP.margin}% 毛利。`
+    : `✓ 各渠道發點比值皆有正毛利。<b>建議比值</b>欄為達成目標毛利 ${TOPUP.margin}% 的每台幣發點上限（高手續費渠道如 App 商店須少發點）。`;
+  // 幣商
+  const s=TOPUP.sell, b=TOPUP.buy, A=TOPUP.dealerAmt;
+  const dealerAR=A*s, buyback= b>0? dealerAR/b : 0, profit=A-buyback, dm= b>0? (1-s/b) : 0;
+  $('tuDealerKpi').innerHTML=`${(dm*100).toFixed(1)} <small>%</small>`;
+  $('tuDealerProfitKpi').innerHTML=`${fmt(profit)} <small>台幣</small>`;
+  $('tuDealerTbl').querySelector('tbody').innerHTML=
+    `<tr><td class="k">幣商採購 ${fmt(A)} 台幣 → 得</td><td class="money">${fmt(dealerAR)} AR</td></tr>`+
+    `<tr><td class="k">我方回收同額 AR → 付出</td><td class="money">${fmt(buyback)} 台幣</td></tr>`+
+    `<tr class="grand"><td class="k">我方賺（價差）</td><td class="money" style="color:${profit>=0?'var(--teal)':'var(--brand)'}">${fmt(profit)} 台幣</td></tr>`;
+  $('tuDealerVerdict').className='verdict '+(dm>=0?'good':'bad');
+  $('tuDealerVerdict').innerHTML=dm>=0
+    ? `✓ 販售 ${fmt1(s)} / 回收 ${fmt1(b)}（AR=1台幣）：價差毛利 <b>${(dm*100).toFixed(1)}%</b>，幣商每採購 ${fmt(A)} 台幣、走完一輪回收我方賺 <b>${fmt(profit)} 台幣</b>。`
+    : `⚠ 回收比值需 <b>大於</b> 販售比值才有價差利潤（目前回收 ${fmt1(b)} ≤ 販售 ${fmt1(s)}）。`;
+}
+$('tuBase').addEventListener('input',e=>{ TOPUP.base=Math.max(0.1,Number(e.target.value)||3); topupRender(); });
+$('tuMargin').addEventListener('input',e=>{ TOPUP.margin=Number(e.target.value); topupRender(); });
+$('tuSell').addEventListener('input',e=>{ TOPUP.sell=Math.max(0.1,Number(e.target.value)||3); topupRender(); });
+$('tuBuy').addEventListener('input',e=>{ TOPUP.buy=Math.max(0.1,Number(e.target.value)||3.3); topupRender(); });
+$('tuDealerAmt').addEventListener('input',e=>{ TOPUP.dealerAmt=Math.max(0,Number(e.target.value)||0); topupRender(); });
+$('tuTbl').addEventListener('input',e=>{ const t=e.target, i=+t.dataset.i;
+  if(t.classList.contains('tu-fee')) TUCH[i].fee=Math.max(0,Number(t.value)||0);
+  else if(t.classList.contains('tu-r')) TUCH[i].r=Math.max(0,Number(t.value)||0);
+  else return; topupRender(); });
+
 seedTree(); agRender();
+payBuild(); payRender();
+topupBuild(); topupRender();
 render();
 </script>
 </body>
