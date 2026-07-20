@@ -578,6 +578,7 @@
           <button data-lm="A">A ×100</button>
           <button data-lm="B">B ×1000</button>
           <button data-lm="C" class="on">C 段位</button>
+          <button data-lm="Cp">C+ 加重</button>
           <button data-lm="dy">抖音</button>
         </div>
         <div class="hint" id="lvModeHint"></div>
@@ -643,7 +644,7 @@
     </section>
 
     <section class="card">
-      <div class="head"><h3>四種模式對照</h3><span class="sub">累積下注流水（AR）・依目前 EXP 獲取率</span></div>
+      <div class="head"><h3>五種模式對照</h3><span class="sub">累積下注流水（AR）・依目前 EXP 獲取率</span></div>
       <div class="body" style="overflow-x:auto"><table id="lvCmpTbl">
         <thead><tr><th>模式</th><th>至 Lv.10</th><th>至 Lv.30</th><th>至 Lv.50</th><th>至 Lv.70</th><th>至 Lv.100</th><th>升滿需時（日流水）</th></tr></thead>
         <tbody></tbody>
@@ -669,7 +670,7 @@
 
     <div class="footnote">
       <b>架構：</b>1–100 級、每 10 級一個段位（🌱新星 Lv.10 → 🏆傳奇 Lv.100）。<b>EXP 來源：</b>下注流水，預設每下注 100 AR 得 1 EXP（左側可調）。
-      <b>方案 A / B：</b>每升 1 級需「目前等級 × 100 / × 1000」EXP。<b>方案 C：</b>需「目前等級 × 段位係數」，係數新星 100 → 傳奇 1000 每段 +100。
+      <b>方案 A / B：</b>每升 1 級需「目前等級 × 100 / × 1000」EXP。<b>方案 C：</b>需「目前等級 × 段位係數」，係數新星 100 → 傳奇 1000 每段 +100。<b>方案 C+：</b>段位係數加重版，前五段同 C（100–500），後五段 700 / 900 / 1200 / 1500 / 2000。
       <b>抖音模式：</b>取抖音財富等級 75 級累積人民幣門檻，依「人民幣→台幣匯率 × 3（AR:台幣）÷ EXP 獲取率」換成 EXP，並把 75 級曲線等比映射到 100 級（保留曲線形狀、套進十段位架構）；原始 75 級表附於上方卡片。
       <b>天數：</b>累積下注流水 ÷ 左側「平均每日下注流水」。所有數字為模型推估，未接後台數據。
     </div>
@@ -1231,8 +1232,10 @@ const LV_MODE_TXT={
   A:'方案 A：每升 1 級需「目前等級 × 100」EXP，升等最寬鬆。',
   B:'方案 B：每升 1 級需「目前等級 × 1000」EXP，升等最嚴格。',
   C:'方案 C：每升 1 級需「目前等級 × 段位係數」，新星 ×100 → 傳奇 ×1000（每段 +100），中庸方案。',
+  Cp:'方案 C+：段位係數加重版，前五段同 C（100→500），後五段翡翠 ×700、鑽石 ×900、星耀 ×1200、大師 ×1500、傳奇 ×2000。',
   dy:'抖音模式：套用抖音財富等級 75 級累積人民幣曲線（等比映射到 100 級），門檻由下方匯率換算成 EXP。'};
-const LV_MODE_LBL={A:'A ×100',B:'B ×1000',C:'C 段位遞增',dy:'抖音曲線'};
+const LV_MODE_LBL={A:'A ×100',B:'B ×1000',C:'C 段位遞增',Cp:'C+ 段位加重',dy:'抖音曲線'};
+const CP_MULT=[100,200,300,400,500,700,900,1200,1500,2000];   // C+ 各段位係數
 
 function dyCumRMB(L){   // Lv.1–100 → 累積人民幣（75 級曲線等比內插映射到 100 級）
   const p=1+(L-1)*74/99, i=Math.floor(p), f=p-i;
@@ -1247,7 +1250,8 @@ function lvCurve(mode){ // 回傳 cum[0..100]：cum[L]＝到達 Lv.L 的累積 E
     for(let L=2;L<=100;L++) cum[L]=(dyCumRMB(L)-base)*conv;
   }else{
     for(let L=2;L<=100;L++){
-      const l=L-1, m= mode==='A'?100 : mode==='B'?1000 : (lvTierIdx(l)+1)*100;
+      const l=L-1, ti=lvTierIdx(l);
+      const m= mode==='A'?100 : mode==='B'?1000 : mode==='Cp'?CP_MULT[ti] : (ti+1)*100;
       cum[L]=cum[L-1]+l*m;
     }
   }
@@ -1304,7 +1308,7 @@ function lvRender(){
 
   // 四種模式對照
   const marks=[10,30,50,70,100];
-  $('lvCmpTbl').querySelector('tbody').innerHTML=['A','B','C','dy'].map(m=>{
+  $('lvCmpTbl').querySelector('tbody').innerHTML=['A','B','C','Cp','dy'].map(m=>{
     const c=lvCurve(m), me=m===LV.mode?' class="me"':'';
     const cells=marks.map(L=>`<td class="money">${fmt(exp2ar(c[L]))}</td>`).join('');
     return `<tr${me}><td class="k">${LV_MODE_LBL[m]}${m===LV.mode?' ◀':''}</td>${cells}<td class="money">${lvDayFmt(exp2ar(c[100])/LV.daily)}</td></tr>`;
